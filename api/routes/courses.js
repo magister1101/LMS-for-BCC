@@ -9,20 +9,20 @@ router.get('/', (req, res, next) => { // Course object is reference from course 
         .select('name description _id') //select the response you want to pass to the client
         .exec()
         .then(doc => {
-                const response = { 
-                    count: doc.length,
-                    course: doc.map(doc =>{
-                        return {
-                            _id: doc._id,
-                            name: doc.name,
-                            description: doc.description,
-                            request: {
-                                type: 'GET',
-                                url: 'http:localhost:'+process.env.PORT+'/courses/' + doc._id
-                            }
+            const response = {
+                count: doc.length,
+                course: doc.map(doc => {
+                    return {
+                        _id: doc._id,
+                        name: doc.name,
+                        description: doc.description,
+                        request: {
+                            type: 'GET',
+                            url: 'http:localhost:' + process.env.PORT + '/courses/' + doc._id
                         }
-                    })
-                }
+                    }
+                })
+            }
             if (doc.length > 0) {
                 res.status(200).json(response)
             }
@@ -59,7 +59,7 @@ router.post('/', (req, res, next) => {
                 description: result.description,
                 request: {
                     type: 'GET',
-                    url: 'http://localhost:'+process.env.PORT+'/courses/' + result._id
+                    url: 'http://localhost:' + process.env.PORT + '/courses/' + result._id
                 }
             }
         })
@@ -85,7 +85,7 @@ router.get('/:courseId', (req, res, next) => {
                     request: {
                         type: 'GET',
                         description: 'get all courses',
-                        url: 'http://localhost:'+process.env.PORT+'/courses'
+                        url: 'http://localhost:' + process.env.PORT + '/courses'
                     }
                 }) //doc is the info here
             }
@@ -130,7 +130,14 @@ router.delete('/:courseId', (req, res, next) => {
     })
         .exec()
         .then(result => {
-            res.status(200).json(result)
+            res.status(200).json({
+                message: 'Course Deleted',
+                request: {
+                    type: 'POST',
+                    url: 'http://localhost:' + process.env.PORT + '/courses',
+                    body: { name: 'String', description: 'String' }
+                }
+            })
         })
         .catch(err => {
             console.log(err),
@@ -139,5 +146,6 @@ router.delete('/:courseId', (req, res, next) => {
                 })
         })
 })
+
 
 module.exports = router;

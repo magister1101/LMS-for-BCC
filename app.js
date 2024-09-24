@@ -8,7 +8,7 @@ const courseRoutes = require('./api/routes/courses');
 const activityRoutes = require('./api/routes/activities');
 
 mongoose.connect('mongodb+srv://markjules13:' + process.env.MONGO_ATLAS_PW + '@node-rest-bcc.t39id.mongodb.net/?retryWrites=true&w=majority&appName=node-rest-bcc');
-console.log(process.env.PORT)
+mongoose.Promise = global.Promise;
 
 app.use(morgan('dev'));
 app.use(bodyParaser.urlencoded({extended: false}));

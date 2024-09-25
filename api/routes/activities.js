@@ -67,9 +67,9 @@ router.get('/', (req, res, next) => {
         });
 })
 
-router.post('/', upload.single('activityImage'), (req, res, next) => {
-    console.log("Incoming file:", req.file);
-    console.log("Incoming body:", req.body);
+router.post('/', upload.single('activityImage'), (req, res, next) => { //activityImage is the name of the input field in the form
+    // console.log("Incoming file:", req.file);
+    // console.log("Incoming body:", req.body);
 
     if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });

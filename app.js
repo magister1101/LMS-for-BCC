@@ -11,6 +11,7 @@ mongoose.connect('mongodb+srv://markjules13:' + process.env.MONGO_ATLAS_PW + '@n
 mongoose.Promise = global.Promise;
 
 app.use(morgan('dev'));
+app.use('/uploads', express.static('uploads')); // make the uploads folder accessible
 app.use(bodyParaser.urlencoded({extended: false}));
 app.use(bodyParaser.json());
 

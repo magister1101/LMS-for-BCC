@@ -5,16 +5,29 @@ const multer = require('multer');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/')
+        cb(null, 'uploads/') //cb - callback function to store the file
     },
     filename: function (req, file, cb) {
-        cb(null, new Date().toISOString().slice(0, 10) + file.originalname);
+        cb(null, file.fieldname + '-' + new Date().toISOString().slice(0, 10) + file.originalname); //cb - callback function to rename the file
     }
 });
 
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") { //check if the file is an image
+        cb(null, true)
 
-const upload = multer({ storage: storage });
+    } else {
+        cb(null, false)
+    }
+};
 
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 1024 * 1024 * 20
+    },
+    fileFilter: fileFilter
+});
 
 
 const Activity = require('../models/activity'); //schema
@@ -23,26 +36,29 @@ const { describe } = require('node:test');
 
 router.get('/', (req, res, next) => {
     Activity.find()
-        .select('course name description _id')
+        .select('course name description _id activityImage') //select only the fields to be displayed
         .populate('course', 'name') //get course as response, this reference the course in the activity model
         .exec()
         .then(doc => {
-            res.status(200).json({
-                count: doc.length,
-                activity: doc.map(doc => {
-                    return {
-                        _id: doc._id,
-                        course: doc.course,
-                        name: doc.name,
-                        description: doc.description,
-                        request: {
-                            type: 'GET',
-                            url: 'http:localhost:' + process.env.PORT + '/activities/' + doc._id
+            res.status(200).json(
+                {
+                    count: doc.length,
+                    activity: doc.map(doc => {
+                        return {
+                            _id: doc._id,
+                            course: doc.course,
+                            name: doc.name,
+                            description: doc.description,
+                            activityImage: doc.activityImage,
+                            request: {
+                                type: 'GET',
+                                url: 'http:localhost:' + process.env.PORT + '/activities/' + doc._id
+                            }
                         }
-                    }
-                })
+                    })
 
-            });
+                }
+            );
         })
         .catch(err => {
             res.status(500).json({
@@ -76,21 +92,21 @@ router.post('/', upload.single('activityImage'), (req, res, next) => {
             return activity.save()
         })
         .then(result => {
-            //console.log(result),
-            res.status(201).json({
-                message: 'Activity created',
-                createdActivity: {
-                    _id: result._id,
-                    course: result.course,
-                    name: result.name,
-                    description: result.description,
-                    activityImage: result.activityImage
-                },
-                request: {
-                    type: 'GET',
-                    url: 'http:localhost:' + process.env.PORT + '/activities/' + result._id
-                }
-            })
+            console.log('result: ' + result),
+                res.status(201).json({
+                    message: 'Activity created',
+                    createdActivity: {
+                        _id: result._id,
+                        course: result.course,
+                        name: result.name,
+                        description: result.description,
+                        activityImage: result.activityImage
+                    },
+                    request: {
+                        type: 'GET',
+                        url: 'http:localhost:' + process.env.PORT + '/activities/' + result._id
+                    }
+                })
         })
         .catch(err => {
             res.status(500).json({
@@ -103,6 +119,7 @@ router.post('/', upload.single('activityImage'), (req, res, next) => {
 
 router.get('/:activityId', (req, res, next) => {
     Activity.findById(req.params.activityId)
+        .select('course name description _id activityImage')
         .populate('course')
         .exec()
         .then(activity => {

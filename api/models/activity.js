@@ -5,6 +5,7 @@ const activitySchema = mongoose.Schema({
     course: {type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true},
     name: {type: String, required: true},
     description: {type: String, required: true},
+    activityImage: {type: String}
 });
 
 module.exports = mongoose.model('Activity', activitySchema);

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 
+
 const Course = require('../models/course'); //schema route
 
 router.get('/', (req, res, next) => { // Course object is reference from course model

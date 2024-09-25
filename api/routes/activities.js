@@ -1,6 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const multer = require('multer');
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/')
+    },
+    filename: function (req, file, cb) {
+        cb(null, new Date().toISOString().slice(0, 10) + file.originalname);
+    }
+});
+
+
+const upload = multer({ storage: storage });
+
+
 
 const Activity = require('../models/activity'); //schema
 const Course = require('../models/course');
@@ -9,6 +24,7 @@ const { describe } = require('node:test');
 router.get('/', (req, res, next) => {
     Activity.find()
         .select('course name description _id')
+        .populate('course', 'name') //get course as response, this reference the course in the activity model
         .exec()
         .then(doc => {
             res.status(200).json({
@@ -35,10 +51,16 @@ router.get('/', (req, res, next) => {
         });
 })
 
-router.post('/', (req, res, next) => {
+router.post('/', upload.single('activityImage'), (req, res, next) => {
+    console.log("Incoming file:", req.file);
+    console.log("Incoming body:", req.body);
+
+    if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+    }
     Course.findById(req.body.courseId)
         .then(course => {
-            if(!course){
+            if (!course) {
                 return res.status(404).json({
                     message: "course not found"
                 })
@@ -47,26 +69,28 @@ router.post('/', (req, res, next) => {
                 _id: new mongoose.Types.ObjectId(),
                 name: req.body.name,
                 description: req.body.description,
-                course: req.body.courseId
+                course: req.body.courseId,
+                activityImage: req.file.path
             });
 
             return activity.save()
         })
         .then(result => {
-            console.log(result),
-                res.status(201).json({
-                    message: 'Activity created',
-                    createdActivity: {
-                        _id: result._id,
-                        course: result.course,
-                        name: result.name,
-                        description: result.description
-                    },
-                    request: {
-                        type: 'GET',
-                        url: 'http:localhost:' + process.env.PORT + '/activities/' + result._id
-                    }
-                })
+            //console.log(result),
+            res.status(201).json({
+                message: 'Activity created',
+                createdActivity: {
+                    _id: result._id,
+                    course: result.course,
+                    name: result.name,
+                    description: result.description,
+                    activityImage: result.activityImage
+                },
+                request: {
+                    type: 'GET',
+                    url: 'http:localhost:' + process.env.PORT + '/activities/' + result._id
+                }
+            })
         })
         .catch(err => {
             res.status(500).json({
@@ -79,27 +103,28 @@ router.post('/', (req, res, next) => {
 
 router.get('/:activityId', (req, res, next) => {
     Activity.findById(req.params.activityId)
-    .exec()
-    .then(activity =>{
-        if(!activity){
-            return res.status(404).json({
-                message: 'Activity not found'
-            })
-        }
-        res.status(200).json({
-            activity: activity,
-            request: {
-                type: 'GET',
-                description: 'Get all activities',
-                url: 'http:localhost:' + process.env.PORT + '/activities/'
+        .populate('course')
+        .exec()
+        .then(activity => {
+            if (!activity) {
+                return res.status(404).json({
+                    message: 'Activity not found'
+                })
             }
-        });
-    })
-    .catch(err =>{
-        res.status(500).json({
-            error: err
+            res.status(200).json({
+                activity: activity,
+                request: {
+                    type: 'GET',
+                    description: 'Get all activities',
+                    url: 'http:localhost:' + process.env.PORT + '/activities/'
+                }
+            });
         })
-    })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            })
+        })
 })
 
 router.delete('/:activityId', (req, res, next) => {

@@ -4,8 +4,11 @@ const morgan = require('morgan');
 const bodyParaser = require('body-parser');
 const mongoose = require('mongoose');
 
+
 const courseRoutes = require('./api/routes/courses');
 const activityRoutes = require('./api/routes/activities');
+const userRoutes = require('./api/routes/users');
+
 
 mongoose.connect('mongodb+srv://markjules13:' + process.env.MONGO_ATLAS_PW + '@node-rest-bcc.t39id.mongodb.net/?retryWrites=true&w=majority&appName=node-rest-bcc');
 mongoose.Promise = global.Promise;
@@ -32,6 +35,8 @@ app.use((req, res, next) => {
 // routes
 app.use('/courses', courseRoutes); 
 app.use('/activities', activityRoutes); 
+app.use('/users', userRoutes); 
+
 
 app.use((req, res, next)=>{
     const error = new Error('Not Found');

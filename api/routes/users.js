@@ -85,7 +85,7 @@ router.post('/signup', (req, res, next) => {
 });
 
 router.post('/login', (req, res, next) => {
-    User.find({ email: req.body.email })
+    User.find({ username: req.body.username })
         .exec()
         .then(user => {
             if (user.length < 1) {
@@ -102,7 +102,7 @@ router.post('/login', (req, res, next) => {
                 if (result) {
                     const token =jwt.sign({
                         userId: user[0]._id,
-                        email: user[0].email,
+                        username: user[0].username,
                     },
                     process.env.JWT_SECRET, //private key
                         {

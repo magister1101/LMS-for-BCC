@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-
+const checkAuth = require('../middleware/check-auth');
 
 const Course = require('../models/course'); //schema route
 
-router.get('/', (req, res, next) => { // Course object is reference from course model
+router.get('/', checkAuth, (req, res, next) => { // Course object is reference from course model
     Course.find()
         .select('name description _id') //select the response you want to pass to the client
         .exec()
@@ -43,7 +43,7 @@ router.get('/', (req, res, next) => { // Course object is reference from course 
         )
 });
 
-router.post('/', (req, res, next) => {
+router.post('/', checkAuth, (req, res, next) => {
 
     const course = new Course({
         _id: new mongoose.Types.ObjectId(),
@@ -73,7 +73,7 @@ router.post('/', (req, res, next) => {
         })
 })
 
-router.get('/:courseId', (req, res, next) => {
+router.get('/:courseId', checkAuth, (req, res, next) => {
     const id = req.params.courseId;
     Course.findById(id)
         .select('name description _id')
@@ -104,7 +104,7 @@ router.get('/:courseId', (req, res, next) => {
         });
 })
 
-router.patch('/:courseId', (req, res, next) => {
+router.patch('/:courseId', checkAuth, (req, res, next) => {
     const id = req.params.courseId;
     const updateOps = {}; //update operations
     for (const ops of req.body) {
@@ -124,7 +124,7 @@ router.patch('/:courseId', (req, res, next) => {
         })
 })
 
-router.delete('/:courseId', (req, res, next) => {
+router.delete('/:courseId', checkAuth, (req, res, next) => {
     const id = req.params.courseId
     Course.deleteOne({
         _id: id

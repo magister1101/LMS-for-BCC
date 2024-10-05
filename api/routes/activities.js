@@ -2,13 +2,14 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const multer = require('multer');
+const checkAuth = require('../middleware/check-auth');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/') //cb - callback function to store the file
     },
     filename: function (req, file, cb) {
-        cb(null, file.fieldname + '-' + new Date().toISOString() + file.originalname); //cb - callback function to rename the file
+        cb(null, file.fieldname + '-' + Date.now() + '-' + file.originalname); //cb - callback function to rename the file
     }
 });
 
@@ -27,6 +28,7 @@ const upload = multer({
         fileSize: 1024 * 1024 * 20
     },
     fileFilter: fileFilter
+
 });
 
 
@@ -67,13 +69,14 @@ router.get('/', (req, res, next) => {
         });
 })
 
-router.post('/', upload.single('activityImage'), (req, res, next) => { //activityImage is the name of the input field in the form
+router.post('/', checkAuth, upload.single('activityImage'), (req, res, next) => { //activityImage is the name of the input field in the form
     // console.log("Incoming file:", req.file);
     // console.log("Incoming body:", req.body);
 
     if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
     }
+
     Course.findById(req.body.courseId)
         .then(course => {
             if (!course) {
@@ -109,11 +112,14 @@ router.post('/', upload.single('activityImage'), (req, res, next) => { //activit
                 })
         })
         .catch(err => {
-            res.status(500).json({
-                message: 'Course not found',
-                error: err
-            })
-        })
+            // Check if the error is already handled or if the response was already sent
+            if (!res.headersSent) {
+                res.status(500).json({
+                    message: 'An error occurred',
+                    error: err
+                });
+            }
+        });
 
 })
 
@@ -144,7 +150,7 @@ router.get('/:activityId', (req, res, next) => {
         })
 })
 
-router.delete('/:activityId', (req, res, next) => {
+router.delete('/:activityId', checkAuth, (req, res, next) => {
     const id = req.params.activityId
     Activity.deleteOne({
         _id: id
@@ -167,6 +173,27 @@ router.delete('/:activityId', (req, res, next) => {
                 })
         })
 })
+
+router.delete('/', checkAuth, (req, res, next) => {
+    Activity.deleteMany({})
+        .exec()
+        .then(result => {
+            res.status(200).json({
+                message: "All activities deleted",
+                request: {
+                    type: 'POST',
+                    url: 'http://localhost:' + process.env.PORT + '/activities',
+                    body: { courseId: 'ID', name: 'String', description: 'String' }
+                }
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
+});
 
 
 module.exports = router;

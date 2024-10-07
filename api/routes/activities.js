@@ -16,5 +16,4 @@ router.delete('/:activityId', checkAuth, ActivitiesController.activities_delete_
 
 router.delete('/', checkAuth, ActivitiesController.activities_delete_all_activity); //Delete all is for Staging purposes only
 
-
 module.exports = router;

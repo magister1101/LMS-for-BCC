@@ -2,6 +2,7 @@
     "env": {
         "MONGO_ATLAS_PW": "markjules123",
         "PORT": "3000",
-        "JWT_SECRET": "secretkey"
+        "JWT_SECRET": "secretkey",
+        "new": "new"
     }
 }

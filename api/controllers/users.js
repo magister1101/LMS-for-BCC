@@ -22,14 +22,40 @@ exports.users_get_all_user = (req, res, next) => {
         });
 };
 
+exports.users_get_user = (req, res, next) => {
+    User.find({ _id: req.params.userId })
+        .exec()
+        .then(user => {
+            res.status(200).json(user);
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            });
+        });
+}
+
+exports.users_my_user = (req, res, next) => {
+    User.find({ _id: req.userData.userId })
+        .exec()
+        .then(user => {
+            res.status(200).json(user);
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            });
+        });
+}
+
 exports.users_create_user = (req, res, next) => {
 
-    User.find({ email: req.body.email })
+    User.find({ $or: [{ username: req.body.username }, { email: req.body.email }] })
         .exec()
         .then(user => {
             if (user.length >= 1) {
                 return res.status(409).json({
-                    message: 'Email already exists'
+                    message: 'Email or username already exists '
                 })
             }
             else {
@@ -48,6 +74,33 @@ exports.users_create_user = (req, res, next) => {
                             email: req.body.email,
                             firstName: req.body.firstName,
                             lastName: req.body.lastName,
+                            middleName: req.body.middleName,
+                            gender: req.body.gender,
+                            contactNumber: req.body.contactNumber,
+                            birthDate: new Date(req.body.birthDate),
+                            //address
+                            country: req.body.country,
+                            zipCode: req.body.zipCode,
+                            province: req.body.province,
+                            municipality: req.body.municipality,
+                            barangay: req.body.barangay,
+                            street: req.body.street,
+                            blockAndLot: req.body.blockAndLot,
+                            //guardian info
+                            guardianFirstName: req.body.guardianFirstName,
+                            guardianLastName: req.body.guardianLastName,
+                            guardianMiddleName: req.body.guardianMiddleName,
+                            guardianContactNumber: req.body.guardianContactNumber,
+                            //guardian address
+                            guardianCountry: req.body.guardianCountry,
+                            guardianZipCode: req.body.guardianZipCode,
+                            guardianProvince: req.body.guardianProvince,
+                            guardianMunicipality: req.body.guardianMunicipality,
+                            guardianBarangay: req.body.guardianBarangay,
+                            guardianStreet: req.body.guardianStreet,
+                            guardianBlockAndLot: req.body.guardianBlockAndLot,
+                            //userimage
+                            userImage: req.file.path,
                         });
                         user
                             .save()
@@ -126,6 +179,22 @@ exports.users_delete_user = (req, res, next) => {
                     error: err
                 })
         })
+};
+
+exports.users_delete_all_user = (req, res, next) => {
+    User.deleteMany({})
+        .exec()
+        .then(result => {
+            res.status(200).json({
+                message: "All users deleted",
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
 };
 
 exports.users_get_test = (req, res, next) => {

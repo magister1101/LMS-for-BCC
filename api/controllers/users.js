@@ -5,6 +5,7 @@ const path = require('path');
 const QRCode = require('qrcode');
 
 const User = require('../models/user');
+const Attendance = require('../models/attendance');
 
 exports.users_get_all_user = (req, res, next) => {
     User.find()
@@ -185,6 +186,15 @@ exports.users_login = (req, res, next) => {
         .catch()
 
 };
+
+exports.users_create_attendance = (req, res, next) => {
+    const userId = req.body.user_id;
+
+    const attendance = new Attendance({
+        _id: new mongoose.Types.ObjectId(),
+        user_id: userId,
+    });
+}
 
 exports.users_delete_user = (req, res, next) => {
     const id = req.params.userId

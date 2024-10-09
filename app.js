@@ -15,8 +15,8 @@ mongoose.Promise = global.Promise;
 
 app.use(morgan('dev'));
 app.use('/uploads', express.static('uploads')); // make the uploads folder accessible
-app.use(bodyParaser.urlencoded({extended: false}));
-app.use(bodyParaser.json());
+app.use(bodyParaser.json()); // For parsing application/json
+app.use(bodyParaser.urlencoded({extended: true})); // For parsing application/x-www-form-urlencoded
 
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");

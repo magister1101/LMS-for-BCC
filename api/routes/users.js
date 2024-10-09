@@ -16,6 +16,8 @@ router.post('/signup', upload.single('userImage'), UsersController.users_create_
 
 router.post('/login', UsersController.users_login);
 
+router.post('/attendance', UsersController.users_create_attendance);
+
 router.delete('/:userId', UsersController.users_delete_user);
 
 router.delete('/', UsersController.users_delete_all_user);

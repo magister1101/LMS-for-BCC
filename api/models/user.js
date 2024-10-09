@@ -12,6 +12,7 @@ const userSchema = mongoose.Schema({
     gender: {type: String, required: true},
     contactNumber: {type: String, required: true},
     birthDate: {type: Date, required: true},
+    school: {type: String, required: true},
 
     //address
     country: {type: String, required: true},
@@ -38,6 +39,7 @@ const userSchema = mongoose.Schema({
     guardianBlockAndLot: {type: String, required: true},
 
     //image
+    qrCode: { type: String },
     userImage: {type: String,required: true},
 
 

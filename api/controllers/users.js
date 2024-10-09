@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const QRCode = require('qrcode');
 
 const User = require('../models/user');
 
@@ -67,8 +69,10 @@ exports.users_create_user = (req, res, next) => {
                         });
                     } else {
 
+                        const userId = new mongoose.Types.ObjectId();
+
                         const user = new User({
-                            _id: new mongoose.Types.ObjectId(),
+                            _id: userId,
                             username: req.body.username,
                             password: hash,
                             email: req.body.email,
@@ -78,6 +82,7 @@ exports.users_create_user = (req, res, next) => {
                             gender: req.body.gender,
                             contactNumber: req.body.contactNumber,
                             birthDate: new Date(req.body.birthDate),
+                            school: req.body.school,
                             //address
                             country: req.body.country,
                             zipCode: req.body.zipCode,
@@ -104,11 +109,30 @@ exports.users_create_user = (req, res, next) => {
                         });
                         user
                             .save()
-                            .then(result => {
-                                console.log(result);
-                                res.status(201).json({
-                                    message: 'User created successfully'
+                            .then(async result => {
+                                const qrCodeFilePath = path.join(__dirname, '../../uploads', `qrcode-${userId}.png`);
+
+                                QRCode.toFile(qrCodeFilePath, userId.toString(), (err) => {
+                                    if (err) {
+                                        console.log('Error Generating QR Code ', err);
+                                        res.status(500).json({
+                                            message: "Error Generating QR Code",
+                                            errir: err
+                                        });
+                                    }
+
+                                    user.qrCode = qrCodeFilePath;
+                                    user.save();
+
+                                    console.log(result);
+                                    res.status(201).json({
+                                        message: 'User created successfully',
+                                        user: result,
+                                        qrCodefilePath: qrCodeFilePath,
+                                    })
                                 })
+
+
                             })
                             .catch(err => {
                                 console.log(err);

@@ -6,4 +6,4 @@ const attendance = mongoose.Schema({
     attendanceDate: {type:Date, default: Date.now, required: true},
 });
 
-module.exports = mongoose.model('Attendance', attendance);
+module.exports = mongoose.model('Attendance', attendanceSchema);

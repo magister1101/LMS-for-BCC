@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const checkAuth = require('../middleware/check-auth');
+const checkCode = require('../middleware/signup-auth');
 const { upload } = require('../../configs/uploadConfig');
 
 const UsersController = require('../controllers/users');
@@ -9,6 +10,10 @@ const UsersController = require('../controllers/users');
 router.get('/', UsersController.users_get_all_user); //Prod: add checkauth middleware
 
 router.get('/myprofile', checkAuth, UsersController.users_my_user);
+
+router.get('/generateCode', UsersController.users_generate_code);
+
+router.get('/checkCode', checkCode, UsersController.users_check_code)
 
 router.get('/:userId', UsersController.users_get_user); //Prod: add checkauth middleware
 

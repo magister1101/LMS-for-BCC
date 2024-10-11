@@ -3,9 +3,12 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const QRCode = require('qrcode');
+const crypto = require('crypto');
+const moment = require('moment');
 
 const User = require('../models/user');
 const Attendance = require('../models/attendance');
+const SignupCode = require('../models/signupCode');
 
 exports.users_get_all_user = (req, res, next) => {
     User.find()
@@ -25,6 +28,19 @@ exports.users_get_all_user = (req, res, next) => {
         });
 };
 
+exports.users_my_user = (req, res, next) => {
+    User.find({ _id: req.userData.userId })
+        .exec()
+        .then(user => {
+            res.status(200).json(user);
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            });
+        });
+}
+
 exports.users_get_user = (req, res, next) => {
     User.find({ _id: req.params.userId })
         .exec()
@@ -38,18 +54,38 @@ exports.users_get_user = (req, res, next) => {
         });
 }
 
-exports.users_my_user = (req, res, next) => {
-    User.find({ _id: req.userData.userId })
-        .exec()
-        .then(user => {
-            res.status(200).json(user);
+exports.users_check_code = (req, res, next) => {
+    res.status(200).json({
+        message: 'Code is valid'
+    });
+}
+
+exports.users_generate_code = (req, res, next) => {
+
+    const code = crypto.randomBytes(3).toString('hex');
+    const expiresAt = moment().add(59, 'minutes').toISOString();
+
+    const signupCode = new SignupCode({
+        _id: new mongoose.Types.ObjectId(),
+        code: code,
+        expiresAt: expiresAt,
+        used: false,
+    });
+    signupCode
+        .save()
+        .then(result => {
+            res.status(201).json({
+                message: 'Signup code generated successfully',
+                code: result,
+            });
         })
         .catch(err => {
+            console.log(err);
             res.status(500).json({
                 error: err
             });
-        });
-}
+        })
+};
 
 exports.users_create_user = (req, res, next) => {
 
@@ -199,6 +235,14 @@ exports.users_create_attendance = (req, res, next) => {
         _id: new mongoose.Types.ObjectId(),
         user_id: userId,
     });
+    attendance
+        .save()
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
 }
 
 exports.users_delete_user = (req, res, next) => {

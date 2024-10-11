@@ -16,7 +16,7 @@ exports.courses_get_all_course = (req, res, next) => { // Course object is refer
                         description: doc.description,
                         request: {
                             type: 'GET',
-                            url: 'http:localhost:' + process.env.PORT + '/courses/' + doc._id
+                            url: process.env.DOMAIN + process.env.PORT + '/courses/' + doc._id
                         }
                     }
                 })
@@ -57,7 +57,7 @@ exports.courses_create_course = (req, res, next) => {
                 description: result.description,
                 request: {
                     type: 'GET',
-                    url: 'http://localhost:' + process.env.PORT + '/courses/' + result._id
+                    url: process.env.DOMAIN + process.env.PORT + '/courses/' + result._id
                 }
             }
         })
@@ -83,7 +83,7 @@ exports.courses_get_course = (req, res, next) => {
                     request: {
                         type: 'GET',
                         description: 'get all courses',
-                        url: 'http://localhost:' + process.env.PORT + '/courses'
+                        url: process.env.DOMAIN + process.env.PORT + '/courses'
                     }
                 }) //doc is the info here
             }
@@ -132,7 +132,7 @@ exports.courses_delete_course = (req, res, next) => {
                 message: 'Course Deleted',
                 request: {
                     type: 'POST',
-                    url: 'http://localhost:' + process.env.PORT + '/courses',
+                    url: process.env.DOMAIN + process.env.PORT + '/courses',
                     body: { name: 'String', description: 'String' }
                 }
             })

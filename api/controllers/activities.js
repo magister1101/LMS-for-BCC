@@ -6,7 +6,7 @@ const Course = require('../models/course');
 exports.activities_get_all_activity = (req, res, next) => {
     Activity.find()
         .select('course name description _id activityImage') //select only the fields to be displayed
-        .populate('course', 'name') //get course as response, this reference the course in the activity model
+        .populate('course', 'name description') //get course as response, this reference the course in the activity model
         .exec()
         .then(doc => {
             res.status(200).json(
@@ -21,7 +21,7 @@ exports.activities_get_all_activity = (req, res, next) => {
                             activityImage: doc.activityImage,
                             request: {
                                 type: 'GET',
-                                url: 'http:localhost:' + process.env.PORT + '/activities/' + doc._id
+                                url: process.env.DOMAIN + process.env.PORT + '/activities/' + doc._id
                             }
                         }
                     })
@@ -74,7 +74,7 @@ exports.activities_create_activity = (req, res, next) => { //activityImage is th
                     },
                     request: {
                         type: 'GET',
-                        url: 'http:localhost:' + process.env.PORT + '/activities/' + result._id
+                        url: process.env.DOMAIN + process.env.PORT + '/activities/' + result._id
                     }
                 })
         })
@@ -106,7 +106,7 @@ exports.activities_get_activity = (req, res, next) => {
                 request: {
                     type: 'GET',
                     description: 'Get all activities',
-                    url: 'http:localhost:' + process.env.PORT + '/activities/'
+                    url: process.env.DOMAIN + process.env.PORT + '/activities/'
                 }
             });
         })
@@ -128,7 +128,7 @@ exports.activities_delete_activity = (req, res, next) => {
                 message: "Activity Deleted",
                 request: {
                     type: 'POST',
-                    url: 'http://localhost:' + process.env.PORT + '/activities',
+                    url: process.env.DOMAIN + process.env.PORT + '/activities',
                     body: { courseId: 'ID', name: 'String', description: 'String' }
                 }
             })
@@ -149,7 +149,7 @@ exports.activities_delete_all_activity = (req, res, next) => {
                 message: "All activities deleted",
                 request: {
                     type: 'POST',
-                    url: 'http://localhost:' + process.env.PORT + '/activities',
+                    url: process.env.DOMAIN + process.env.PORT + '/activities',
                     body: { courseId: 'ID', name: 'String', description: 'String' }
                 }
             });

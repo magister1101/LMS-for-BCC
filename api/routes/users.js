@@ -13,7 +13,7 @@ router.get('/myprofile', checkAuth, UsersController.users_my_user);
 
 router.get('/generateCode', UsersController.users_generate_code);
 
-router.get('/checkCode', checkCode, UsersController.users_check_code)
+router.get('/checkCode', checkCode, UsersController.users_check_code);
 
 router.get('/:userId', UsersController.users_get_user); //Prod: add checkauth middleware
 

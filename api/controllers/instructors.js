@@ -4,16 +4,17 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const QRCode = require('qrcode');
 
-const User = require('../models/user');
-const Attendance = require('../models/attendance');
+const Instructor = require('../models/instructor');
+const { error } = require('console');
 
-exports.users_get_all_user = (req, res, next) => {
-    User.find()
+
+exports.instructors_get_all_instructor = (req, res, next) => {
+    Instructor.find()
         .exec()
         .then(doc => {
             const response = {
                 number_of_users: doc.length,
-                users: doc
+                Instructor: doc
             }
             res.status(200).json(response);
         })
@@ -25,8 +26,8 @@ exports.users_get_all_user = (req, res, next) => {
         });
 };
 
-exports.users_get_user = (req, res, next) => {
-    User.find({ _id: req.params.userId })
+exports.instructors_get_instructor = (req, res, next) => {
+    Instructor.find({ _id: req.params.userId })
         .exec()
         .then(user => {
             res.status(200).json(user);
@@ -38,8 +39,8 @@ exports.users_get_user = (req, res, next) => {
         });
 }
 
-exports.users_my_user = (req, res, next) => {
-    User.find({ _id: req.userData.userId })
+exports.instructors_my_instructor = (req, res, next) => {
+    Instructor.find({ _id: req.userData.userId })
         .exec()
         .then(user => {
             res.status(200).json(user);
@@ -51,15 +52,15 @@ exports.users_my_user = (req, res, next) => {
         });
 }
 
-exports.users_create_user = (req, res, next) => {
+exports.instructors_create_instructor = (req, res, next) => {
 
-    User.find({ $or: [{ username: req.body.username }, { email: req.body.email }] })
+    Instructor.find({ $or: [{ username: req.body.username }, { email: req.body.email }] })
         .exec()
-        .then(user => {
-            if (user.length >= 1) {
+        .then(instructor => {
+            if (instructor.length >= 1) {
                 return res.status(409).json({
                     message: 'Email or username already exists '
-                })
+                });
             }
             else {
 
@@ -72,7 +73,7 @@ exports.users_create_user = (req, res, next) => {
 
                         const userId = new mongoose.Types.ObjectId();
 
-                        const user = new User({
+                        const instructor = new Instructor({
                             _id: userId,
                             username: req.body.username,
                             password: hash,
@@ -81,34 +82,9 @@ exports.users_create_user = (req, res, next) => {
                             lastName: req.body.lastName,
                             middleName: req.body.middleName,
                             gender: req.body.gender,
-                            contactNumber: req.body.contactNumber,
-                            birthDate: new Date(req.body.birthDate),
-                            school: req.body.school,
-                            //address
-                            country: req.body.country,
-                            zipCode: req.body.zipCode,
-                            province: req.body.province,
-                            municipality: req.body.municipality,
-                            barangay: req.body.barangay,
-                            street: req.body.street,
-                            blockAndLot: req.body.blockAndLot,
-                            //guardian info
-                            guardianFirstName: req.body.guardianFirstName,
-                            guardianLastName: req.body.guardianLastName,
-                            guardianMiddleName: req.body.guardianMiddleName,
-                            guardianContactNumber: req.body.guardianContactNumber,
-                            //guardian address
-                            guardianCountry: req.body.guardianCountry,
-                            guardianZipCode: req.body.guardianZipCode,
-                            guardianProvince: req.body.guardianProvince,
-                            guardianMunicipality: req.body.guardianMunicipality,
-                            guardianBarangay: req.body.guardianBarangay,
-                            guardianStreet: req.body.guardianStreet,
-                            guardianBlockAndLot: req.body.guardianBlockAndLot,
-                            //userimage
                             userImage: req.file.path,
                         });
-                        user
+                        instructor
                             .save()
                             .then(async result => {
                                 const qrCodeFilePath = path.join(__dirname, '../../uploads', `qrcode-${userId}.png`);
@@ -122,12 +98,12 @@ exports.users_create_user = (req, res, next) => {
                                         });
                                     }
 
-                                    user.qrCode = qrCodeFilePath;
-                                    user.save();
+                                    instructor.qrCode = qrCodeFilePath;
+                                    instructor.save();
 
                                     console.log(result);
                                     res.status(201).json({
-                                        message: 'User created successfully',
+                                        message: 'Instructor created successfully',
                                         user: result,
                                         qrCodefilePath: qrCodeFilePath,
                                     })
@@ -145,10 +121,11 @@ exports.users_create_user = (req, res, next) => {
                 })
             }
         })
+
 };
 
-exports.users_login = (req, res, next) => {
-    User.find({ username: req.body.username })
+exports.instructors_login_instructor = (req, res, next) => {
+    Instructor.find({ username: req.body.username })
         .exec()
         .then(user => {
             if (user.length < 1) {
@@ -184,22 +161,12 @@ exports.users_login = (req, res, next) => {
             })
         })
         .catch(err => {
-            console.log(err),
-                res.status(500).json({
-                    error: err
-                })
-        })
-
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
 };
-
-exports.users_create_attendance = (req, res, next) => {
-    const userId = req.body.user_id;
-
-    const attendance = new Attendance({
-        _id: new mongoose.Types.ObjectId(),
-        user_id: userId,
-    });
-}
 
 exports.users_delete_user = (req, res, next) => {
     const id = req.params.userId
@@ -220,12 +187,12 @@ exports.users_delete_user = (req, res, next) => {
         })
 };
 
-exports.users_delete_all_user = (req, res, next) => {
-    User.deleteMany({})
+exports.instructors_delete_all_instructor = (req, res, next) => {
+    Instructor.deleteMany({})
         .exec()
         .then(result => {
             res.status(200).json({
-                message: "All users deleted",
+                message: "All Instructors deleted",
             });
         })
         .catch(err => {

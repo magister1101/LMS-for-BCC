@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const checkAuth = require('../middleware/check-auth');
-const { upload } = require('../../configs/uploadConfig')
+const { upload } = require('../../configs/uploadConfigActivity')
 
 const ActivitiesController = require ('../controllers/activities'); //controller for functions
 
 //ROUTERS
 router.get('/', checkAuth, ActivitiesController.activities_get_all_activity);
 
-router.post('/', checkAuth, upload.single('activityImage'), ActivitiesController.activities_create_activity);
+router.post('/', checkAuth, upload.single('activityFile'), ActivitiesController.activities_create_activity);
 
 router.get('/:activityId', checkAuth, ActivitiesController.activities_get_activity);
 

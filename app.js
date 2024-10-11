@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const courseRoutes = require('./api/routes/courses');
 const activityRoutes = require('./api/routes/activities');
 const userRoutes = require('./api/routes/users');
+const instructorRoutes = require('./api/routes/instructors');
 
 
 mongoose.connect('mongodb+srv://markjules13:' + process.env.MONGO_ATLAS_PW + '@node-rest-bcc.t39id.mongodb.net/?retryWrites=true&w=majority&appName=node-rest-bcc');
@@ -36,6 +37,7 @@ app.use((req, res, next) => {
 app.use('/courses', courseRoutes); 
 app.use('/activities', activityRoutes); 
 app.use('/users', userRoutes); 
+app.use('/instructors', instructorRoutes); 
 
 
 app.use((req, res, next)=>{

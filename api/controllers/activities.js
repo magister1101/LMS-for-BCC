@@ -56,7 +56,7 @@ exports.activities_create_activity = (req, res, next) => { //activityImage is th
                 name: req.body.name,
                 description: req.body.description,
                 course: req.body.courseId,
-                activityImage: req.file.path
+                activityFile: req.file.path
             });
 
             return activity.save()

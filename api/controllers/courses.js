@@ -26,7 +26,7 @@ exports.courses_get_all_course = (req, res, next) => { // Course object is refer
             }
             else {
                 res.status(404).json({
-                    message: 'No Enties Found'
+                    message: 'No Course Entries Found'
                 })
             }
 

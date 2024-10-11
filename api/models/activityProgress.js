@@ -6,6 +6,8 @@ const courseProgressSchema = mongoose.Schema({
     activity_id: {type: String, required: true},
     progress: {type: Number, required: true},
 
+    //archive checker
+    isArchived: {type: Boolean, default: false},
 });
 
 module.exports = mongoose.model('CourseProgress', courseProgressSchema);

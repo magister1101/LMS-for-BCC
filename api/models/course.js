@@ -4,7 +4,9 @@ const courseSchema = mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
     name: {type: String, required: true},
     description: {type: String, required: true},
-    //number is the data type for int
+    
+    //archive checker
+    isArchived: {type: Boolean, default: false},
 });
 
 module.exports = mongoose.model('Course', courseSchema);

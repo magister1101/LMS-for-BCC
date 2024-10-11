@@ -5,7 +5,7 @@ const checkAuth = require('../middleware/check-auth');
 const CoursesController = require('../controllers/courses');
 
 //ROUTERS
-router.get('/', checkAuth, CoursesController.courses_get_all_course);
+router.get('/',  CoursesController.courses_get_all_course);
 
 router.post('/', checkAuth, CoursesController.courses_create_course);
 

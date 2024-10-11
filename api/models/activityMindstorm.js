@@ -6,6 +6,9 @@ const activityMindstormSchema = mongoose.Schema({
     name: {type: String, required: true},
     description: {type: String, required: true},
     mindstormFile: {type: String, required: true},
+
+    //archive checker
+    isArchived: {type: Boolean, default: false},
 });
 
 module.exports = mongoose.model('ActivityMindstorm', activityMindstormSchema);

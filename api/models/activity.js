@@ -6,6 +6,9 @@ const activitySchema = mongoose.Schema({
     name: {type: String, required: true},
     description: {type: String, required: true},
     activityFile: {type: String, required: true},
+    
+    //archive checker
+    isArchived: {type: Boolean, default: false},
 });
 
 module.exports = mongoose.model('Activity', activitySchema);

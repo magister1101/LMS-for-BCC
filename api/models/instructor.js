@@ -16,6 +16,8 @@ const instructorSchema = mongoose.Schema({
     qrCode: { type: String },
     userImage: {type: String,required: true},
 
+    //archive checker
+    isArchived: {type: Boolean, default: false},
 });
 
 module.exports = mongoose.model('Instructor', instructorSchema);

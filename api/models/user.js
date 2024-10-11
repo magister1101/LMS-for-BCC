@@ -42,6 +42,9 @@ const userSchema = mongoose.Schema({
     qrCode: { type: String },
     userImage: {type: String,required: true},
 
+    //title
+    title: {type: String, required: true, default: "Member"},
+
     //archive checker
     isArchived: {type: Boolean, default: false},
 });

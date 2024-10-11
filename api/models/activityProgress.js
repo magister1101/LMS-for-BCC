@@ -5,7 +5,9 @@ const courseProgressSchema = mongoose.Schema({
     user_id: {type: String, required: true},
     activity_id: {type: String, required: true},
     progress: {type: Number, required: true},
-
+    createdAt: {type: Date, default: Date.now, required: true},
+    isSubmitted: {type: Boolean, default: false},
+    
     //archive checker
     isArchived: {type: Boolean, default: false},
 });

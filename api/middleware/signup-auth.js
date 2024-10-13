@@ -15,16 +15,19 @@ module.exports = (req, res, next) => {
             }
 
             const now = moment();
-            const { expiresAt } = code;
+            const { expiresAt, used} = code;
            
             // Check if the code is expired
             if (now.isAfter(expiresAt)) {
                 return res.status(400).json({ message: 'Code has expired' });
             }
 
+            console.log('used:', used)
             console.log('now:', now);
             console.log('expiresAt:', expiresAt);
-
+            
+            code.used = true;
+            code.save()
             // Code is valid and not expired
             next();
         })

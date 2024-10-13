@@ -168,8 +168,6 @@ exports.users_create_user = (req, res, next) => {
                                         qrCodefilePath: qrCodeFilePath,
                                     })
                                 })
-
-
                             })
                             .catch(err => {
                                 console.log(err);

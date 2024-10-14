@@ -229,16 +229,42 @@ exports.users_login = (req, res, next) => {
 exports.users_create_attendance = (req, res, next) => {
     const userId = req.body.user_id
 
-    console.log("date now", date);
-    console.log("date iso", date.toLocaleString()); // convert to local time zone
+    const currentDate = new Date();
+    const startOfDay = new Date(currentDate.setHours(0, 0, 0, 0)); // Start of the day
+    const endOfDay = new Date(currentDate.setHours(23, 59, 59, 999)); // End of the day
 
-    const attendance = new Attendance({
-        _id: new mongoose.Types.ObjectId(),
+    // console.log("date now", date);
+    // console.log("date iso", date.toLocaleString()); // convert to local time zone
+
+
+    Attendance.findOne({
         user_id: userId,
-    });
-    console.log("attendance recorded");
-    attendance
-        .save()
+        attendanceDate: {
+            $gte: startOfDay, //gte greatr than or equal to
+            $lte: endOfDay  //lte less than or equal to
+        }
+    })
+        .then(existingAttendance => {
+            if (existingAttendance) {
+                return res.status(409).json({
+                    message: 'Attendance already recorded for the day'
+                })
+            } else {
+                const attendance = new Attendance({
+                    _id: new mongoose.Types.ObjectId(),
+                    user_id: userId,
+                });
+                console.log("attendance recorded");
+                attendance
+                    .save()
+                    .then(result => {
+                        res.status(201).json({
+                            message: 'Attendance recorded successfully',
+                            attendance: result,
+                        })
+                    })
+            }
+        })
         .catch(err => {
             console.log(err);
             res.status(500).json({

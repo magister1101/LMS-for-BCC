@@ -227,12 +227,16 @@ exports.users_login = (req, res, next) => {
 };
 
 exports.users_create_attendance = (req, res, next) => {
-    const userId = req.body.user_id;
+    const userId = req.body.user_id
+
+    console.log("date now", date);
+    console.log("date iso", date.toLocaleString()); // convert to local time zone
 
     const attendance = new Attendance({
         _id: new mongoose.Types.ObjectId(),
         user_id: userId,
     });
+    console.log("attendance recorded");
     attendance
         .save()
         .catch(err => {

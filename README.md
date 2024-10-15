@@ -1,1 +1,1 @@
-This is my Final Year in UNI Capstone Project. A Restful API, designed for BCC.
+A learning Management System for Bacoor Computer Center, this system will serve as their primary LMS, the suggested innovation for this capstone project is the built in 3D viewer for the institution's Mind Storm activities, an activity that revolves around robotics.

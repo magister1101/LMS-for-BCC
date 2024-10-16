@@ -5,7 +5,7 @@ const Course = require('../models/course');
 
 exports.activities_get_all_activity = (req, res, next) => {
     Activity.find()
-        .select('course name description _id activityImage') //select only the fields to be displayed
+        .select('course name description _id activityImage isArchived') //select only the fields to be displayed
         .populate('course', 'name description') //get course as response, this reference the course in the activity model
         .exec()
         .then(doc => {
@@ -19,6 +19,7 @@ exports.activities_get_all_activity = (req, res, next) => {
                             name: doc.name,
                             description: doc.description,
                             activityImage: doc.activityImage,
+                            isArchived: doc.isArchived,
                             request: {
                                 type: 'GET',
                                 url: process.env.DOMAIN + process.env.PORT + '/activities/' + doc._id
@@ -115,6 +116,64 @@ exports.activities_get_activity = (req, res, next) => {
                 error: err
             })
         })
+};
+
+exports.activities_update_activity = (req, res, next) => {
+    const id = req.params.activityId;
+    const updateOps = {};
+    for (const ops of req.body) {
+        updateOps[ops.propName] = ops.value; //propName is the property to get the property name of the object that will be patched from JSON 
+    }
+    Activity.updateOne({ _id: id }, { $set: updateOps })
+        .exec()
+        .then(result => {
+            res.status(200).json(result)
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            })
+        })
+};
+
+exports.activities_archive_activity = async (req, res, next) => {
+    const id = req.params.activityId;
+    const { isArchived } = req.body;
+
+    if (typeof isArchived !== 'boolean') {
+        return res.status(400).json({
+            message: "isArchived must be a boolean"
+        });
+    }
+
+    try {
+        const updatedActivity = await Activity.findByIdAndUpdate(id, { isArchived }, { new: true });
+        if (!updatedActivity) {
+            return res.status(404).json({
+                message: "Activity not found"
+            });
+        }
+        res.status(200).json({
+            message: "Activity updated",
+            updatedActivity: {
+                _id: updatedActivity._id,
+                course: updatedActivity.course,
+                name: updatedActivity.name,
+                description: updatedActivity.description,
+                isArchived: updatedActivity.isArchived
+            },
+            request: {
+                type: 'GET',
+                url: process.env.DOMAIN + process.env.PORT + '/activities/' + updatedActivity._id
+            }
+        });
+    }
+    catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
 };
 
 exports.activities_delete_activity = (req, res, next) => {

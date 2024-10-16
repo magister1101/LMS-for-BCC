@@ -7,9 +7,9 @@ const CoursesController = require('../controllers/courses');
 //ROUTERS
 router.get('/', checkAuth, CoursesController.courses_get_all_course);
 
-router.post('/', checkAuth, CoursesController.courses_create_course);
-
 router.get('/:courseId', checkAuth, CoursesController.courses_get_course);
+
+router.post('/', checkAuth, CoursesController.courses_create_course);
 
 router.patch('/:courseId', checkAuth, CoursesController.courses_update_course);
 

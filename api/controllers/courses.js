@@ -4,7 +4,7 @@ const Course = require('../models/course'); //schema route
 
 exports.courses_get_all_course = (req, res, next) => { // Course object is reference from course model
     Course.find()
-        .select('name description _id') //select the response you want to pass to the client
+        .select('name description _id isArchived') //select the response you want to pass to the client
         .exec()
         .then(doc => {
             const response = {
@@ -14,6 +14,7 @@ exports.courses_get_all_course = (req, res, next) => { // Course object is refer
                         _id: doc._id,
                         name: doc.name,
                         description: doc.description,
+                        isArchived: doc.isArchived,
                         request: {
                             type: 'GET',
                             url: process.env.DOMAIN + process.env.PORT + '/courses/' + doc._id
@@ -52,9 +53,7 @@ exports.courses_create_course = (req, res, next) => {
         res.status(201).json({
             message: 'Course created',
             createdCourse: {
-                id: result._id,
-                name: result.name,
-                description: result.description,
+                result: result,
                 request: {
                     type: 'GET',
                     url: process.env.DOMAIN + process.env.PORT + '/courses/' + result._id
@@ -73,7 +72,6 @@ exports.courses_create_course = (req, res, next) => {
 exports.courses_get_course = (req, res, next) => {
     const id = req.params.courseId;
     Course.findById(id)
-        .select('name description _id')
         .exec()
         .then(doc => {
             console.log(doc);
@@ -119,6 +117,44 @@ exports.courses_update_course = (req, res, next) => {
                 error: err
             })
         })
+};
+
+exports.courses_archive_course = async (req, res, next) => {
+    const id = req.params.courseId;
+    const { isArchived } = req.body;
+
+    if (typeof isArchived !== 'boolean') {
+        return res.status(400).json({
+            message: "isArchived must be a boolean"
+        });
+    }
+
+    try {
+        const updatedCourse = await Course.findByIdAndUpdate(id, { isArchived }, { new: true });
+        if (!updatedCourse) {
+            return res.status(404).json({
+                message: "Course not found"
+            });
+        }
+        res.status(200).json({
+            message: "Course updated",
+            updatedCourse: {
+                _id: updatedCourse._id,
+                name: updatedCourse.name,
+                description: updatedCourse.description,
+                isArchived: updatedCourse.isArchived
+            },
+            request: {
+                type: 'GET',
+                url: process.env.DOMAIN + process.env.PORT + '/courses/' + updatedCourse._id
+            }
+        });
+    }
+    catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
 };
 
 exports.courses_delete_course = (req, res, next) => {

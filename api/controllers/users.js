@@ -273,6 +273,41 @@ exports.users_create_attendance = (req, res, next) => {
         });
 }
 
+exports.users_archive_user = async (req, res, next) => {
+    const id = req.params.userId;
+    const { isArchived } = req.body;
+
+    if (typeof isArchived !== 'boolean') {
+        return res.status(400).json({
+            message: "isArchived must be a boolean"
+        });
+    }
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate(id, { isArchived }, { new: true });
+        if (!updatedUser) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+        res.status(200).json({
+            message: "User updated",
+            updatedUser: {
+                user: updatedUser
+            },
+            request: {
+                type: 'GET',
+                url: process.env.DOMAIN + process.env.PORT + '/users/' + updatedUser._id
+            }
+        });
+    }
+    catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
+};
+
 exports.users_delete_user = (req, res, next) => {
     const id = req.params.userId
     User.deleteOne({

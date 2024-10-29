@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const morgan = require('morgan');
-const bodyParaser = require('body-parser');
+const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
 
@@ -16,8 +16,8 @@ mongoose.Promise = global.Promise;
 
 app.use(morgan('dev'));
 app.use('/uploads', express.static('uploads')); // make the uploads folder accessible
-app.use(bodyParaser.json()); // For parsing application/json
-app.use(bodyParaser.urlencoded({extended: true})); // For parsing application/x-www-form-urlencoded
+app.use(bodyParser.json()); // For parsing application/json
+app.use(bodyParser.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
 
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
@@ -34,19 +34,19 @@ app.use((req, res, next) => {
 
 
 // routes
-app.use('/courses', courseRoutes); 
-app.use('/activities', activityRoutes); 
-app.use('/users', userRoutes); 
-app.use('/instructors', instructorRoutes); 
+app.use('/courses', courseRoutes);
+app.use('/activities', activityRoutes);
+app.use('/users', userRoutes);
+app.use('/instructors', instructorRoutes);
 
 
-app.use((req, res, next)=>{
+app.use((req, res, next) => {
     const error = new Error('Not Found');
     error.status = 404;
     next(error);
 })
 
-app.use((error, req, res, next)=>{
+app.use((error, req, res, next) => {
     res.status(error.status || 500);
     res.json({
         error: {

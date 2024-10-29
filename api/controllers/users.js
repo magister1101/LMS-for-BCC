@@ -154,7 +154,7 @@ exports.users_create_user = (req, res, next) => {
                                         console.log('Error Generating QR Code ', err);
                                         res.status(500).json({
                                             message: "Error Generating QR Code",
-                                            errir: err
+                                            error: err
                                         });
                                     }
 
@@ -187,13 +187,13 @@ exports.users_login = (req, res, next) => {
         .then(user => {
             if (user.length < 1) {
                 return res.status(401).json({
-                    message: 'Auth Failed'
+                    message: 'Auth Failed (UserName Not found)'
                 });
             }
             bcrypt.compare(req.body.password, user[0].password, (err, result) => {
                 if (err) {
                     return res.status(401).json({
-                        message: 'Auth Failed'
+                        message: 'Auth Failed (incorrect Password)'
                     });
                 }
                 if (result) {

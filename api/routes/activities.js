@@ -10,7 +10,7 @@ router.get('/', checkAuth, ActivitiesController.activities_get_all_activity);
 
 router.get('/:activityId', checkAuth, ActivitiesController.activities_get_activity);
 
-router.post('/', checkAuth, upload.single('activityFile'), ActivitiesController.activities_create_activity);
+router.post('/', upload.single('activityFile'), ActivitiesController.activities_create_activity);
 
 router.put('/:activityId', checkAuth, ActivitiesController.activities_archive_activity);
 

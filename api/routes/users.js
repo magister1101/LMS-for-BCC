@@ -9,7 +9,7 @@ const UsersController = require('../controllers/users');
 //ROUTERS
 router.get('/', UsersController.users_get_all_user); //Prod: add checkauth middleware
 
-router.get('/myprofile', checkAuth, UsersController.users_my_user);
+router.get('/myProfile', checkAuth, UsersController.users_my_user);
 
 router.get('/generateCode', UsersController.users_generate_code);
 

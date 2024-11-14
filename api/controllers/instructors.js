@@ -83,6 +83,7 @@ exports.instructors_create_instructor = (req, res, next) => {
                             middleName: req.body.middleName,
                             gender: req.body.gender,
                             userImage: req.file.path,
+                            assignedCourses: req.body.assignedCourses || [],
                         });
                         instructor
                             .save()

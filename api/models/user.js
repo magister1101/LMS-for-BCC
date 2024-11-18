@@ -44,7 +44,7 @@ const userSchema = mongoose.Schema({
 
     //title
     title: { type: String, required: true, default: "Member" },
-    rank: { type: number, required: true, default: 0 },
+    rank: { type: Number, required: true, default: 0 },
 
     //archive checker
     isArchived: { type: Boolean, default: false },

@@ -11,7 +11,6 @@ const instructorSchema = mongoose.Schema({
     middleName: { type: String },
     gender: { type: String, required: true },
     isInstructor: { type: Boolean, default: true },
-    assignedCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
 
     //image
     qrCode: { type: String },

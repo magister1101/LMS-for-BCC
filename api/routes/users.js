@@ -11,11 +11,13 @@ router.get('/', UsersController.users_get_all_user); //Prod: add checkauth middl
 
 router.get('/myProfile', checkAuth, UsersController.users_my_user);
 
+router.get('/tokenValidation', UsersController.users_token_validation);
+
 router.get('/generateCode', UsersController.users_generate_code);
 
-router.get('/checkCode', checkCode, UsersController.users_check_code);
-
 router.get('/:userId', UsersController.users_get_user); //Prod: add checkauth middleware
+
+router.post('/checkCode', UsersController.users_check_code);
 
 router.post('/signup', upload.single('userImage'), UsersController.users_create_user);
 

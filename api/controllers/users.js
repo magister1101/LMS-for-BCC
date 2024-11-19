@@ -5,10 +5,10 @@ const path = require('path');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const moment = require('moment');
+const SignupCode = require('../models/signupCode');
 
 const User = require('../models/user');
 const Attendance = require('../models/attendance');
-const SignupCode = require('../models/signupCode');
 
 exports.users_get_all_user = (req, res, next) => {
     User.find()
@@ -41,6 +41,24 @@ exports.users_my_user = (req, res, next) => {
         });
 }
 
+exports.users_token_validation = (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({ isValid: false });
+        }
+
+        const token = authHeader.split(' ')[1];
+        console.log("Received token:", token);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log("Decoded token:", decoded);
+
+        return res.json({ isValid: true });
+    } catch (error) {
+        return res.status(500).json({ isValid: false });
+    }
+};
+
 exports.users_get_user = (req, res, next) => {
     User.find({ _id: req.params.userId })
         .exec()
@@ -55,10 +73,44 @@ exports.users_get_user = (req, res, next) => {
 }
 
 exports.users_check_code = (req, res, next) => {
-    res.status(200).json({
-        message: 'Code is valid'
-    });
-}
+    SignupCode.findOne({ code: req.body.code })
+        .exec()
+        .then(code => {
+            if (!code) {
+                // If the code doesn't exist
+                return res.status(400).json({ message: 'Invalid or missing code' });
+            }
+
+            if (code.used) {
+                // If the code has already been used
+                return res.status(400).json({ message: 'Code has already been used' });
+            }
+
+            const now = moment();
+            const { expiresAt } = code;
+
+            // Check if the code has expired
+            if (now.isAfter(expiresAt)) {
+                return res.status(400).json({ message: 'Code has expired' });
+            }
+
+            // Code is valid, mark it as used
+            code.used = true;
+            code.save()
+                .then(() => {
+                    res.status(200).json({ message: 'valid' });
+                })
+                .catch(err => {
+                    // Handle any errors that occur while saving
+                    return res.status(500).json({ error: 'Failed to update code as used' });
+                });
+        })
+        .catch(err => {
+            // Handle any errors that occur during the database query
+            return res.status(500).json({ error: err.message });
+        });
+};
+
 
 exports.users_generate_code = (req, res, next) => {
 

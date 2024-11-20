@@ -25,12 +25,11 @@ router.post('/login', UsersController.users_login);
 
 router.post('/attendance', UsersController.users_create_attendance);
 
-router.put('/:userId', UsersController.users_archive_user);
+router.put('/update/:userId', UsersController.users_update_user);
 
 router.delete('/:userId', UsersController.users_delete_user);
 
-router.delete('/', UsersController.users_delete_all_user);
+router.delete('/deleteAll', UsersController.users_delete_all_user);
 
-router.get('/test', UsersController.users_get_test);
 
 module.exports = router;

@@ -4,7 +4,8 @@ const date = new Date();
 const attendanceSchema = mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
     user_id: { type: String, required: true },
-    attendanceDate: { type: Date, default: date, required: true },
+    attendanceDateStartTime: { type: Date, default: date, required: true },
+    attendanceDateEndTime: { type: Date, default: date }
 });
 
 module.exports = mongoose.model('Attendance', attendanceSchema);

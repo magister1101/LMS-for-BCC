@@ -7,13 +7,13 @@ const CoursesController = require('../controllers/courses');
 //ROUTERS
 router.get('/', CoursesController.courses_get_all_course);
 
-router.get('/:courseId', checkAuth, CoursesController.courses_get_course);
+router.get('/:courseId', CoursesController.courses_get_course);
 
 router.post('/', CoursesController.courses_create_course);
 
-router.put('/:courseId', CoursesController.courses_archive_course);
+router.put('/archive/:courseId', CoursesController.courses_archive_course);
 
-router.patch('/:courseId', checkAuth, CoursesController.courses_update_course);
+router.patch('/:courseId', CoursesController.courses_update_course);
 
 router.delete('/:courseId', CoursesController.courses_delete_course);
 

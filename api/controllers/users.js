@@ -111,7 +111,6 @@ exports.users_check_code = (req, res, next) => {
         });
 };
 
-
 exports.users_generate_code = (req, res, next) => {
 
     const code = crypto.randomBytes(3).toString('hex');
@@ -323,40 +322,29 @@ exports.users_create_attendance = (req, res, next) => {
                 error: err
             });
         });
-}
+};
 
-exports.users_archive_user = async (req, res, next) => {
-    const id = req.params.userId;
-    const { isArchived } = req.body;
+exports.users_update_user = (req, res, next) => {
+    const userId = req.params.userId;
+    const updateFields = req.body;
 
-    if (typeof isArchived !== 'boolean') {
-        return res.status(400).json({
-            message: "isArchived must be a boolean"
-        });
-    }
+    if (updateFields.password) {
+        const bcrypt = require('bcrypt');
+        const saltRounds = 10;
 
-    try {
-        const updatedUser = await User.findByIdAndUpdate(id, { isArchived }, { new: true });
-        if (!updatedUser) {
-            return res.status(404).json({
-                message: "User not found"
-            });
-        }
-        res.status(200).json({
-            message: "User updated",
-            updatedUser: {
-                user: updatedUser
-            },
-            request: {
-                type: 'GET',
-                url: process.env.DOMAIN + process.env.PORT + '/users/' + updatedUser._id
+        bcrypt.hash(updateFields.password, saltRounds, (err, hash) => {
+            if (err) {
+                return res.status(500).json({
+                    message: "Error in hashing password",
+                    error: err
+                });
             }
+            updateFields.password = hash;
+            performUpdate(userId, updateFields, res);
         });
     }
-    catch (err) {
-        res.status(500).json({
-            error: err
-        })
+    else {
+        performUpdate(userId, updateFields, res);
     }
 };
 
@@ -395,16 +383,19 @@ exports.users_delete_all_user = (req, res, next) => {
         });
 };
 
-exports.users_get_test = (req, res, next) => {
-    User.find()
-        .exec()
-        .then(doc => {
-            res.status(200).json(doc);
+const performUpdate = (userId, updateFields, res) => {
+    User.findByIdAndUpdate(userId, updateFields, { new: true })
+        .then((updatedUser) => {
+            if (!updatedUser) {
+                res.status(404).json({ message: "User not found" });
+            }
+            res.status(200).json(updatedUser);
+
         })
-        .catch(err => {
-            console.log(err);
+        .catch((err) => {
             res.status(500).json({
+                message: "Error in updating user",
                 error: err
             });
-        });
+        })
 };

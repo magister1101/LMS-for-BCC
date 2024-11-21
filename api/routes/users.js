@@ -23,7 +23,9 @@ router.post('/signup', upload.single('userImage'), UsersController.users_create_
 
 router.post('/login', UsersController.users_login);
 
-router.post('/attendanceLogIn', UsersController.users_create_attendance);
+router.post('/attendanceLogin', UsersController.users_create_attendanceLogin);
+
+router.put('/attendanceLogout', UsersController.users_create_attendanceLogout);
 
 router.put('/update/:userId', UsersController.users_update_user);
 

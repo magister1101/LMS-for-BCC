@@ -6,10 +6,11 @@ const QRCode = require('qrcode');
 const crypto = require('crypto');
 const moment = require('moment');
 const SignupCode = require('../models/signupCode');
-const Date = new Date();
+const date = new Date();
 
 const User = require('../models/user');
 const Attendance = require('../models/attendance');
+const attendance = require('../models/attendance');
 
 exports.users_get_all_user = (req, res, next) => {
     User.find()
@@ -268,20 +269,15 @@ exports.users_login = (req, res, next) => {
 
 };
 
-exports.users_create_attendance = (req, res, next) => {
+exports.users_create_attendanceLogin = (req, res, next) => {
     const userId = req.body.user_id
-
+    console.log(userId)
     const currentDate = new Date();
     const startOfDay = new Date(currentDate.setHours(0, 0, 0, 0)); // Start of the day
     const endOfDay = new Date(currentDate.setHours(23, 59, 59, 999)); // End of the day
-
-    // console.log("date now", date);
-    // console.log("date iso", date.toLocaleString()); // convert to local time zone
-
-
     Attendance.findOne({
         user_id: userId,
-        attendanceDate: {
+        attendanceDateStartTime: {
             $gte: startOfDay, //gte greatr than or equal to
             $lte: endOfDay  //lte less than or equal to
         }
@@ -307,11 +303,68 @@ exports.users_create_attendance = (req, res, next) => {
             }
         })
         .catch(err => {
-            return es.status(500).json({
+            return res.status(500).json({
                 error: err
             });
         });
 };
+
+exports.users_create_attendanceLogout = (req, res, next) => {
+    const userId = req.body.user_id;
+    console.log("User ID:", userId);
+
+    const currentDate = new Date();
+    const startOfDay = new Date(currentDate);
+    startOfDay.setHours(0, 0, 0, 0); // Start of the day
+    const endOfDay = new Date(currentDate);
+    endOfDay.setHours(23, 59, 59, 999); // End of the day
+
+    Attendance.findOne({
+        user_id: userId,
+        attendanceDateStartTime: {
+            $gte: startOfDay,
+            $lte: endOfDay
+        }
+    })
+        .then(existingAttendance => {
+            if (existingAttendance) {
+                if (existingAttendance.attendanceDateEndTime) {
+                    // If logout time already exists, return a conflict response
+                    return res.status(409).json({
+                        message: 'Logout time already recorded for the day',
+                    });
+                }
+
+                const attendanceId = existingAttendance._id;
+
+                // Update the attendance record with the logout time
+                return Attendance.findByIdAndUpdate(
+                    attendanceId,
+                    { attendanceDateEndTime: new Date() }, // Set current time as logout time
+                    { new: true } // Return the updated document
+                ).then(updatedAttendance => {
+                    console.log("Updated Attendance:", updatedAttendance);
+                    return res.status(200).json({
+                        message: 'Logout time recorded successfully',
+                        attendance: updatedAttendance,
+                    });
+                });
+            } else {
+                // No attendance record found for the day
+                return res.status(409).json({
+                    message: 'No attendance record found for the day',
+                });
+            }
+        })
+        .catch(err => {
+            console.error("Error:", err);
+            return res.status(500).json({
+                error: err.message || 'An error occurred while processing the request',
+            });
+        });
+};
+
+
 
 exports.users_update_user = (req, res, next) => {
     const userId = req.params.userId;

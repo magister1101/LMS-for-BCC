@@ -22,17 +22,13 @@ module.exports = (req, res, next) => {
                 return res.status(400).json({ message: 'Code has expired' });
             }
 
-            console.log('used:', used)
-            console.log('now:', now);
-            console.log('expiresAt:', expiresAt);
-
             code.used = true;
             code.save()
             // Code is valid and not expired
             next();
         })
         .catch(err => {
-            res.status(500).json({
+            return res.status(500).json({
                 error: err
             })
         })

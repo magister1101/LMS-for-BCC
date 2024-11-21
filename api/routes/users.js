@@ -7,7 +7,7 @@ const { upload } = require('../../configs/uploadConfig');
 const UsersController = require('../controllers/users');
 
 //ROUTERS
-router.get('/', UsersController.users_get_all_user); //Prod: add checkauth middleware
+router.get('/', UsersController.users_get_all_user);
 
 router.get('/myProfile', checkAuth, UsersController.users_my_user);
 
@@ -15,11 +15,11 @@ router.get('/tokenValidation', UsersController.users_token_validation);
 
 router.get('/generateCode', UsersController.users_generate_code);
 
-router.get('/:userId', UsersController.users_get_user); //Prod: add checkauth middleware
+router.get('/:userId', UsersController.users_get_user);
 
 router.post('/checkCode', UsersController.users_check_code);
 
-router.post('/signup', upload.single('userImage'), UsersController.users_create_user);
+router.post('/signup', upload.single('userImage'), UsersController.users_create_user); // add multiple data, photocopy of parents ID, and photocopy of student ID
 
 router.post('/login', UsersController.users_login);
 

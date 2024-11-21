@@ -9,41 +9,41 @@ const userSchema = mongoose.Schema({
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     middleName: { type: String },
-    gender: { type: String, required: true },
-    contactNumber: { type: String, required: true },
-    birthDate: { type: Date, required: true },
-    school: { type: String, required: true },
+    gender: { type: String, required: true, },
+    contactNumber: { type: String, required: true, default: "none" },
+    birthDate: { type: Date, required: true, default: "none" },
+    school: { type: String, required: true, default: "none" },
 
     //address
-    country: { type: String, required: true },
-    zipCode: { type: String, required: true },
-    province: { type: String, required: true },
-    municipality: { type: String, required: true },
-    barangay: { type: String, required: true },
-    street: { type: String, required: true },
-    blockAndLot: { type: String, required: true },
+    country: { type: String, required: true, default: "none" },
+    zipCode: { type: String, required: true, default: "none" },
+    province: { type: String, required: true, default: "none" },
+    municipality: { type: String, required: true, default: "none" },
+    barangay: { type: String, required: true, default: "none" },
+    street: { type: String, required: true, default: "none" },
+    blockAndLot: { type: String, required: true, default: "none" },
 
     //guardian info
-    guardianFirstName: { type: String, required: true },
-    guardianLastName: { type: String, required: true },
+    guardianFirstName: { type: String, required: true, default: "none" },
+    guardianLastName: { type: String, required: true, default: "none" },
     guardianMiddleName: { type: String },
-    guardianContactNumber: { type: String, required: true },
+    guardianContactNumber: { type: String, required: true, default: "none" },
 
     //guardian address
-    guardianCountry: { type: String, required: true },
-    guardianZipCode: { type: String, required: true },
-    guardianProvince: { type: String, required: true },
-    guardianMunicipality: { type: String, required: true },
-    guardianBarangay: { type: String, required: true },
-    guardianStreet: { type: String, required: true },
-    guardianBlockAndLot: { type: String, required: true },
+    guardianCountry: { type: String, required: true, default: "none" },
+    guardianZipCode: { type: String, required: true, default: "none" },
+    guardianProvince: { type: String, required: true, default: "none" },
+    guardianMunicipality: { type: String, required: true, default: "none" },
+    guardianBarangay: { type: String, required: true, default: "none" },
+    guardianStreet: { type: String, required: true, default: "none" },
+    guardianBlockAndLot: { type: String, required: true, default: "none" },
 
     //image
     qrCode: { type: String },
     userImage: { type: String, required: true },
 
     //title
-    title: { type: String, required: true, default: "Member" },
+    title: { type: String, required: true, default: "member" }, //member, instructor, admin
     rank: { type: Number, required: true, default: 0 },
 
     //archive checker

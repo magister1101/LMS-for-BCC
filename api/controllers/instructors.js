@@ -191,28 +191,14 @@ exports.instructors_delete_all_instructor = (req, res, next) => {
     Instructor.deleteMany({})
         .exec()
         .then(result => {
-            res.status(200).json({
+            return res.status(200).json({
                 message: "All Instructors deleted",
             });
         })
         .catch(err => {
-            console.log(err);
-            res.status(500).json({
+            return res.status(500).json({
                 error: err
             });
         });
 };
 
-exports.users_get_test = (req, res, next) => {
-    User.find()
-        .exec()
-        .then(doc => {
-            res.status(200).json(doc);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
-            });
-        });
-};

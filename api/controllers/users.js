@@ -18,11 +18,10 @@ exports.users_get_all_user = (req, res, next) => {
                 number_of_users: doc.length,
                 users: doc
             }
-            res.status(200).json(response);
+            return res.status(200).json(response);
         })
         .catch(err => {
-            console.log(err);
-            res.status(500).json({
+            return res.status(500).json({
                 error: err
             });
         });
@@ -32,10 +31,10 @@ exports.users_my_user = (req, res, next) => {
     User.find({ _id: req.userData.userId })
         .exec()
         .then(user => {
-            res.status(200).json(user);
+            return res.status(200).json(user);
         })
         .catch(err => {
-            res.status(500).json({
+            return res.status(500).json({
                 error: err
             });
         });
@@ -47,12 +46,8 @@ exports.users_token_validation = (req, res, next) => {
         if (!authHeader) {
             return res.status(401).json({ isValid: false });
         }
-
         const token = authHeader.split(' ')[1];
-        console.log("Received token:", token);
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("Decoded token:", decoded);
-
         return res.json({ isValid: true });
     } catch (error) {
         return res.status(500).json({ isValid: false });
@@ -98,7 +93,7 @@ exports.users_check_code = (req, res, next) => {
             code.used = true;
             code.save()
                 .then(() => {
-                    res.status(200).json({ message: 'valid' });
+                    return res.status(200).json({ message: 'valid' });
                 })
                 .catch(err => {
                     // Handle any errors that occur while saving
@@ -125,14 +120,13 @@ exports.users_generate_code = (req, res, next) => {
     signupCode
         .save()
         .then(result => {
-            res.status(201).json({
+            return res.status(201).json({
                 message: 'Signup code generated successfully',
                 code: result,
             });
         })
         .catch(err => {
-            console.log(err);
-            res.status(500).json({
+            return res.status(500).json({
                 error: err
             });
         })
@@ -202,8 +196,7 @@ exports.users_create_user = (req, res, next) => {
 
                                 QRCode.toFile(qrCodeFilePath, userId.toString(), (err) => {
                                     if (err) {
-                                        console.log('Error Generating QR Code ', err);
-                                        res.status(500).json({
+                                        return res.status(500).json({
                                             message: "Error Generating QR Code",
                                             error: err
                                         });
@@ -212,8 +205,7 @@ exports.users_create_user = (req, res, next) => {
                                     user.qrCode = qrCodeFilePath;
                                     user.save();
 
-                                    console.log(result);
-                                    res.status(201).json({
+                                    return res.status(201).json({
                                         message: 'User created successfully',
                                         user: result,
                                         qrCodefilePath: qrCodeFilePath,
@@ -221,8 +213,7 @@ exports.users_create_user = (req, res, next) => {
                                 })
                             })
                             .catch(err => {
-                                console.log(err);
-                                res.status(500).json({
+                                return res.status(500).json({
                                     error: err
                                 });
                             })
@@ -269,10 +260,9 @@ exports.users_login = (req, res, next) => {
             })
         })
         .catch(err => {
-            console.log(err),
-                res.status(500).json({
-                    error: err
-                })
+            return res.status(500).json({
+                error: err
+            })
         })
 
 };
@@ -305,11 +295,10 @@ exports.users_create_attendance = (req, res, next) => {
                     _id: new mongoose.Types.ObjectId(),
                     user_id: userId,
                 });
-                console.log("attendance recorded");
                 attendance
                     .save()
                     .then(result => {
-                        res.status(201).json({
+                        return res.status(201).json({
                             message: 'Attendance recorded successfully',
                             attendance: result,
                         })
@@ -317,8 +306,7 @@ exports.users_create_attendance = (req, res, next) => {
             }
         })
         .catch(err => {
-            console.log(err);
-            res.status(500).json({
+            return es.status(500).json({
                 error: err
             });
         });
@@ -355,15 +343,14 @@ exports.users_delete_user = (req, res, next) => {
     })
         .exec()
         .then(result => {
-            res.status(200).json({
+            return res.status(200).json({
                 message: 'User Deleted',
             })
         })
         .catch(err => {
-            console.log(err),
-                res.status(500).json({
-                    error: err
-                })
+            return res.status(500).json({
+                error: err
+            })
         })
 };
 
@@ -371,13 +358,12 @@ exports.users_delete_all_user = (req, res, next) => {
     User.deleteMany({})
         .exec()
         .then(result => {
-            res.status(200).json({
+            return res.status(200).json({
                 message: "All users deleted",
             });
         })
         .catch(err => {
-            console.log(err);
-            res.status(500).json({
+            return res.status(500).json({
                 error: err
             });
         });
@@ -387,13 +373,13 @@ const performUpdate = (userId, updateFields, res) => {
     User.findByIdAndUpdate(userId, updateFields, { new: true })
         .then((updatedUser) => {
             if (!updatedUser) {
-                res.status(404).json({ message: "User not found" });
+                return res.status(404).json({ message: "User not found" });
             }
-            res.status(200).json(updatedUser);
+            return res.status(200).json(updatedUser);
 
         })
         .catch((err) => {
-            res.status(500).json({
+            return res.status(500).json({
                 message: "Error in updating user",
                 error: err
             });

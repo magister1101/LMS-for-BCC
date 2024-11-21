@@ -6,6 +6,7 @@ const QRCode = require('qrcode');
 const crypto = require('crypto');
 const moment = require('moment');
 const SignupCode = require('../models/signupCode');
+const Date = new Date();
 
 const User = require('../models/user');
 const Attendance = require('../models/attendance');
@@ -38,7 +39,7 @@ exports.users_my_user = (req, res, next) => {
                 error: err
             });
         });
-}
+};
 
 exports.users_token_validation = (req, res, next) => {
     try {
@@ -65,7 +66,7 @@ exports.users_get_user = (req, res, next) => {
                 error: err
             });
         });
-}
+};
 
 exports.users_check_code = (req, res, next) => {
     SignupCode.findOne({ code: req.body.code })

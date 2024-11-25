@@ -58,35 +58,14 @@ exports.courses_get_course = async (req, res, next) => {
             if (queryConditions.length > 0) {
                 searchCriteria = { $and: queryConditions };
             }
-
-            const items = await Course.find(searchCriteria);
-            return res.status(200).json(items);
-
         }
+        const course = await Course.find(searchCriteria);
+        return res.status(200).json(course);
 
 
     } catch (err) {
         return res.status(500).json(err);
     }
-
-    const id = req.params.id;
-    Course.findById(id)
-        .exec()
-        .then(doc => {
-            if (doc) {
-                return res.status(200).json(doc)
-            }
-            else {
-                return res.status(404).json({
-                    message: 'no valid entry for the provided ID'
-                })
-            }
-        })
-        .catch(err => {
-            return res.status(500).json({
-                error: err
-            })
-        });
 };
 
 exports.courses_create_course = (req, res, next) => {
@@ -95,7 +74,7 @@ exports.courses_create_course = (req, res, next) => {
         _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
         description: req.body.description,
-        courseFile: req.file.path
+        courseFile: req.body.courseFile,
     });
     course.save().then(result => {
         return res.status(201).json({
@@ -172,7 +151,6 @@ exports.courses_add_activity = async (req, res, next) => {
     }
 };
 
-
 exports.courses_delete_course = (req, res, next) => {
     const id = req.params.id
     Course.deleteOne({
@@ -241,4 +219,38 @@ const performActivityUpdate = (courseId, activityId, updateFields, res) => {
                 error: err,
             });
         });
+};
+
+exports.get_activity_by_id = async (req, res) => {
+    try {
+        const { courseId, activityId } = req.params;
+
+        // Validate courseId and activityId
+        if (!mongoose.Types.ObjectId.isValid(courseId) || !mongoose.Types.ObjectId.isValid(activityId)) {
+            return res.status(400).json({ message: 'Invalid courseId or activityId.' });
+        }
+
+        // Find the course and filter for the specific activity
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found.' });
+        }
+
+        // Find the specific activity
+        const activity = course.activities.find(
+            (activity) => activity._id.toString() === activityId
+        );
+
+        if (!activity) {
+            return res.status(404).json({ message: 'Activity not found.' });
+        }
+
+        // Return the activity
+        return res.status(200).json(activity);
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Error retrieving activity.',
+            error: error.message,
+        });
+    }
 };

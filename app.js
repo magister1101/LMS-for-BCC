@@ -3,6 +3,7 @@ const app = express();
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const cors = require('cors');
 const dotenv = require('dotenv').config();
 
 
@@ -19,6 +20,7 @@ app.use('/uploads', express.static('uploads')); // make the uploads folder acces
 app.use(bodyParser.json()); // For parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
 
+app.use(cors());
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header(
@@ -31,6 +33,7 @@ app.use((req, res, next) => {
     }
     next();
 });
+
 
 
 // routes

@@ -13,6 +13,12 @@ const courseSchema = mongoose.Schema({
     }],
     courseFile: { type: String },
     isArchived: { type: Boolean, default: false },
+
+    submissions: [{
+        _id: mongoose.Schema.Types.ObjectId,
+        student: { type: String },
+        submissionFile: { type: String },
+    }]
 });
 
 module.exports = mongoose.model('Course', courseSchema);

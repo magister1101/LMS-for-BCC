@@ -1,4 +1,5 @@
 const express = require('express');
+const serverless = require('serverless-http');
 const app = express();
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
@@ -12,7 +13,7 @@ const activityRoutes = require('./api/routes/activities');
 const userRoutes = require('./api/routes/users');
 
 
-mongoose.connect('mongodb+srv://markjules13:' + process.env.MONGO_ATLAS_PW + '@node-rest-bcc.t39id.mongodb.net/?retryWrites=true&w=majority&appName=node-rest-bcc');
+mongoose.connect('mongodb+srv://markjules13:markjules123@node-rest-bcc.t39id.mongodb.net/?retryWrites=true&w=majority&appName=node-rest-bcc');
 mongoose.Promise = global.Promise;
 
 app.use(morgan('dev'));
@@ -58,3 +59,4 @@ app.use((error, req, res, next) => {
 })
 
 module.exports = app;
+module.exports.handler = serverless(app);

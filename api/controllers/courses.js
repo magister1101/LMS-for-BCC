@@ -28,7 +28,47 @@ exports.courses_get_all_course = (req, res, next) => { // Course object is refer
         )
 };
 
-exports.courses_get_course = (req, res, next) => {
+exports.courses_get_course = async (req, res, next) => {
+    try {
+        const { isArchived, query } = req.query;
+        const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        let searchCriteria = {};
+        const queryConditions = [];
+
+        if (query) {
+            const escapedQuery = escapeRegex(query);
+            const orConditions = [];
+
+            if (mongoose.Types.ObjectId.isValid(query)) {
+                orConditions.push({ _id: query });
+            }
+
+            orConditions.push(
+                { name: { $regex: escapedQuery, $options: 'i' } },
+                { description: { $regex: escapedQuery, $options: 'i' } },
+            );
+
+            queryConditions.push({ $or: orConditions });
+
+            if (isArchived) {
+                const archiveStatus = isArchived === 'true';
+                queryConditions.push({ isArchived: archiveStatus });
+            }
+
+            if (queryConditions.length > 0) {
+                searchCriteria = { $and: queryConditions };
+            }
+
+            const items = await Course.find(searchCriteria);
+            return res.status(200).json(items);
+
+        }
+
+
+    } catch (err) {
+        return res.status(500).json(err);
+    }
+
     const id = req.params.id;
     Course.findById(id)
         .exec()
@@ -54,7 +94,8 @@ exports.courses_create_course = (req, res, next) => {
     const course = new Course({
         _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
-        description: req.body.description
+        description: req.body.description,
+        courseFile: req.file.path
     });
     course.save().then(result => {
         return res.status(201).json({
@@ -75,6 +116,62 @@ exports.courses_update_course = (req, res, next) => {
     const updateFields = req.body;
     performUpdate(id, updateFields, res);
 };
+
+exports.courses_add_activity = async (req, res, next) => {
+    const courseId = req.params.id;
+
+    // Validate file upload
+    const { name, description } = req.body;
+    let newActivity = {};
+
+    // Validate input fields
+    if (!name || !description) {
+        return res.status(400).json({ message: 'Name and description are required' });
+    }
+
+    try {
+        if (req.file) {
+            const activityFile = req.file.path;
+            newActivity = {
+                _id: new mongoose.Types.ObjectId(),
+                name,
+                description,
+                activityFile,
+                isArchived: false,
+            };
+        }
+        else {
+            newActivity = {
+                _id: new mongoose.Types.ObjectId(),
+                name,
+                description,
+                isArchived: false,
+            };
+        }
+
+        // Find course and add the activity
+        const updatedCourse = await Course.findByIdAndUpdate(
+            courseId,
+            { $push: { activities: newActivity } },
+            { new: true, runValidators: true } // Return the updated course and validate input
+        );
+
+        // Check if the course was found
+        if (!updatedCourse) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        // Respond with success and updated course
+        return res.status(200).json({
+            message: 'Activity added successfully',
+            updatedCourse,
+        });
+    } catch (error) {
+        // Handle server errors
+        return res.status(500).json({ message: error.message });
+    }
+};
+
 
 exports.courses_delete_course = (req, res, next) => {
     const id = req.params.id
@@ -114,4 +211,34 @@ const performUpdate = (id, updateFields, res) => {
                 error: err
             });
         })
+};
+
+exports.courses_update_activity = (req, res, next) => {
+    const { courseId, activityId } = req.params;
+    const updateFields = req.body;
+
+    performActivityUpdate(courseId, activityId, updateFields, res);
+};
+
+const performActivityUpdate = (courseId, activityId, updateFields, res) => {
+    Course.findOneAndUpdate(
+        { _id: courseId, "activities._id": activityId }, // Match course and activity
+        { $set: { "activities.$": { ...updateFields, _id: activityId } } }, // Update activity fields
+        { new: true, runValidators: true } // Return updated document, validate fields
+    )
+        .then((updatedCourse) => {
+            if (!updatedCourse) {
+                return res.status(404).json({ message: "Course or Activity Not Found" });
+            }
+            return res.status(200).json({
+                message: "Activity updated successfully",
+                updatedCourse,
+            });
+        })
+        .catch((err) => {
+            return res.status(500).json({
+                message: "Error in updating Activity",
+                error: err,
+            });
+        });
 };

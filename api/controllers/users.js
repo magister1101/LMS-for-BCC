@@ -247,7 +247,7 @@ exports.users_login = (req, res, next) => {
                     },
                         process.env.JWT_SECRET, //private key
                         {
-                            expiresIn: "1h" //key expires in 1 hour
+                            expiresIn: "8h" //key expires in # hour
                         }
                     )
 

@@ -12,22 +12,79 @@ const User = require('../models/user');
 const Attendance = require('../models/attendance');
 const attendance = require('../models/attendance');
 
-exports.users_get_all_user = (req, res, next) => {
-    User.find()
-        .exec()
-        .then(doc => {
-            const response = {
-                number_of_users: doc.length,
-                users: doc
+exports.users_get_all_user = async (req, res, next) => {
+    try {
+        const { isArchived, query, filter } = req.query;
+
+        // Helper function to escape special characters in regex
+        const escapeRegex = (value) => {
+            return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        };
+
+        let searchCriteria = {};
+        const queryConditions = [];
+
+        // Build query conditions based on 'query' parameter
+        if (query) {
+            const escapedQuery = escapeRegex(query);
+            const orConditions = [];
+
+            // Check for valid ObjectId
+            if (mongoose.Types.ObjectId.isValid(query)) {
+                orConditions.push({ _id: query });
             }
-            return res.status(200).json(response);
-        })
-        .catch(err => {
-            return res.status(500).json({
-                error: err
+
+            // Add regex-based search conditions
+            orConditions.push(
+                { firstName: { $regex: escapedQuery, $options: 'i' } },
+                { lastName: { $regex: escapedQuery, $options: 'i' } },
+                { middleName: { $regex: escapedQuery, $options: 'i' } },
+                { email: { $regex: escapedQuery, $options: 'i' } },
+                { username: { $regex: escapedQuery, $options: 'i' } },
+                { contactNumber: { $regex: escapedQuery, $options: 'i' } },
+            );
+
+            queryConditions.push({ $or: orConditions });
+        }
+
+        // Build filter-based conditions
+        if (filter) {
+            const escapedFilter = escapeRegex(filter);
+            queryConditions.push({
+                $or: [
+                    { title: { $regex: escapedFilter, $options: 'i' } },
+                    { school: { $regex: escapedFilter, $options: 'i' } },
+                    { gender: { $regex: escapedFilter, $options: 'i' } },
+                ],
             });
+        }
+
+        // Add isArchived condition if provided
+        if (isArchived) {
+            const isArchivedBool = isArchived === 'true'; // Convert to boolean
+            queryConditions.push({ isArchived: isArchivedBool });
+        }
+
+        // Combine conditions into a single search criteria
+        if (queryConditions.length > 0) {
+            searchCriteria = { $and: queryConditions };
+        }
+
+        // Fetch users based on the search criteria
+        const users = await User.find(searchCriteria);
+
+        // Return the fetched users
+        return res.status(200).json(users);
+
+    } catch (error) {
+        console.error('Error retrieving users:', error);
+        return res.status(500).json({
+            message: "Error in retrieving users",
+            error: error.message || error,
         });
+    }
 };
+
 
 exports.users_my_user = (req, res, next) => {
     User.find({ _id: req.userData.userId })
@@ -46,7 +103,7 @@ exports.users_token_validation = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
         if (!authHeader) {
-            return res.status(401).json({ isValid: false });
+            return res.status(200).json({ isValid: false });
         }
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -74,11 +131,11 @@ exports.users_check_code = (req, res, next) => {
         .exec()
         .then(code => {
             if (!code) {
-                return res.status(400).json({ message: 'Invalid or missing code' });
+                return res.status(200).json({ message: 'Invalid or missing code' });
             }
 
             if (code.used) {
-                return res.status(400).json({ message: 'Code has already been used' });
+                return res.status(200).json({ message: 'Code has already been used' });
             }
 
             const now = moment();
@@ -86,11 +143,11 @@ exports.users_check_code = (req, res, next) => {
 
             // Check if the code has expired
             if (now.isAfter(expiresAt)) {
-                return res.status(400).json({ message: 'Code has expired' });
+                return res.status(200).json({ message: 'Code has expired' });
             }
 
             // Code is valid, mark it as used
-            // code.used = true;
+            code.used = true;
             code.save()
                 .then(() => {
                     return res.status(200).json({ isValid: true });

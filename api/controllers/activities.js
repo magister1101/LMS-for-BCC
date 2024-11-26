@@ -3,6 +3,24 @@ const mongoose = require('mongoose');
 const Activity = require('../models/activity');
 const Course = require('../models/course');
 
+const performUpdate = (id, updateFields, res) => {
+    Activity.findByIdAndUpdate(id, updateFields, { new: true })
+        .populate('course')
+        .then((updated) => {
+            if (!updated) {
+                return res.status(404).json({ message: "Activity Not Found" });
+            }
+            return res.status(200).json(updated);
+
+        })
+        .catch((err) => {
+            return res.status(500).json({
+                message: "Error in updating Activity",
+                error: err
+            });
+        })
+};
+
 exports.activities_get_all_activity = (req, res, next) => {
     Activity.find()
         .populate('course')
@@ -42,7 +60,7 @@ exports.activities_get_activity = (req, res, next) => {
         })
 };
 
-exports.activities_create_activity = (req, res, next) => { //activityImage is the name of the input field in the form
+exports.activities_create_activity = (req, res, next) => {
     if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
     }
@@ -120,20 +138,3 @@ exports.activities_delete_all_activity = (req, res, next) => {
         });
 };
 
-const performUpdate = (id, updateFields, res) => {
-    Activity.findByIdAndUpdate(id, updateFields, { new: true })
-        .populate('course')
-        .then((updated) => {
-            if (!updated) {
-                return res.status(404).json({ message: "Activity Not Found" });
-            }
-            return res.status(200).json(updated);
-
-        })
-        .catch((err) => {
-            return res.status(500).json({
-                message: "Error in updating Activity",
-                error: err
-            });
-        })
-};

@@ -5,12 +5,15 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors = require('cors');
+
 const dotenv = require('dotenv').config();
 
 
 const courseRoutes = require('./api/routes/courses');
 const activityRoutes = require('./api/routes/activities');
 const userRoutes = require('./api/routes/users');
+const fileUploadRouter = require('./configs/fileUploadRouter');
+
 
 
 mongoose.connect('mongodb+srv://markjules13:markjules123@node-rest-bcc.t39id.mongodb.net/?retryWrites=true&w=majority&appName=node-rest-bcc');
@@ -41,6 +44,7 @@ app.use((req, res, next) => {
 app.use('/courses', courseRoutes);
 app.use('/activities', activityRoutes);
 app.use('/users', userRoutes);
+app.use('/fileUploadRouter', fileUploadRouter);
 
 
 app.use((req, res, next) => {
@@ -57,7 +61,6 @@ app.use((error, req, res, next) => {
         }
     });
 })
-
 
 module.exports = app;
 module.exports.handler = serverless(app);

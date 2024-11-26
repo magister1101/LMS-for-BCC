@@ -74,12 +74,10 @@ exports.users_check_code = (req, res, next) => {
         .exec()
         .then(code => {
             if (!code) {
-                // If the code doesn't exist
                 return res.status(400).json({ message: 'Invalid or missing code' });
             }
 
             if (code.used) {
-                // If the code has already been used
                 return res.status(400).json({ message: 'Code has already been used' });
             }
 
@@ -92,10 +90,10 @@ exports.users_check_code = (req, res, next) => {
             }
 
             // Code is valid, mark it as used
-            code.used = true;
+            // code.used = true;
             code.save()
                 .then(() => {
-                    return res.status(200).json({ message: 'valid' });
+                    return res.status(200).json({ isValid: true });
                 })
                 .catch(err => {
                     // Handle any errors that occur while saving

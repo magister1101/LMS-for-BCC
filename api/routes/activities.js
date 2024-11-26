@@ -14,8 +14,4 @@ router.post('/', upload.single('activityFile'), ActivitiesController.activities_
 
 router.put('/update/:id', ActivitiesController.activities_update_activity);
 
-router.delete('/:activityId', ActivitiesController.activities_delete_activity);
-
-router.delete('/', ActivitiesController.activities_delete_all_activity); //Delete all is for Staging purposes only
-
 module.exports = router;

@@ -5,12 +5,159 @@ const path = require('path');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const moment = require('moment');
-const SignupCode = require('../models/signupCode');
-const date = new Date();
+const { format } = require('date-fns');
 
+
+const SignupCode = require('../models/signupCode');
 const User = require('../models/user');
 const Attendance = require('../models/attendance');
-const attendance = require('../models/attendance');
+const Log = require('../models/log');
+const Course = require('../models/course');
+
+
+const performUpdate = (userId, updateFields, res) => {
+    User.findByIdAndUpdate(userId, updateFields, { new: true })
+        .then((updatedUser) => {
+            if (!updatedUser) {
+                return res.status(404).json({ message: "User not found" });
+            }
+            return res.status(200).json(updatedUser);
+
+        })
+        .catch((err) => {
+            return res.status(500).json({
+                message: "Error in updating user",
+                error: err
+            });
+        })
+};
+
+const performLog = async (userId, action, reference, key, res) => {
+    try {
+        const user = await User.findOne({ _id: userId });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        var newReference = null;
+
+        if (key === 'user') {
+            const _user = await User.findOne({ _id: reference });
+            newReference = _user.firstName + ' ' + _user.lastName + ' (USER)';
+        }
+        else if (key === 'course') {
+            const _course = await Course.findOne({ _id: reference });
+            newReference = _course.name + ' (COURSE)';
+        }
+        else if (key === 'activity') {
+            const _activity = await Course.activities.findOne({ _id: reference });
+            newReference = _activity.name + ' (ACTIVITY)';
+        } else {
+            return res.status(400).json({ message: 'Invalid key' });
+        }
+
+        const name = user.firstName + ' ' + user.lastName;
+
+        const date = new Date();
+        const month = date.getMonth() + 1; // getMonth() returns a zero-indexed value, so we add 1
+        const day = date.getDate();
+        const year = date.getFullYear();
+        const formattedDate = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
+
+        const log = new Log({
+            _id: new mongoose.Types.ObjectId(),
+            name: name,
+            action: action,
+            reference: newReference,
+            timestamp: formattedDate
+        });
+
+        await log.save();
+        return console.log({ message: 'Log saved successfully', log });
+
+    } catch (err) {
+        console.error('Error performing log:', err);
+        if (res) {
+            return res.status(500).json({
+                message: 'Error in performing log',
+                error: err.message
+            });
+        }
+    }
+};
+
+exports.viewLogs = async (req, res, next) => {
+    try {
+        const { query, filter } = req.query;
+
+        const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        let searchCriteria = {};
+        const queryConditions = [];
+
+        if (query) {
+            const escapedQuery = escapeRegex(query);
+            const orConditions = [];
+
+            if (mongoose.Types.ObjectId.isValid(query)) {
+                orConditions.push({ _id: query });
+            }
+            // Search by name or reference
+            orConditions.push(
+                { name: { $regex: escapedQuery, $options: 'i' } },
+                { reference: { $regex: escapedQuery, $options: 'i' } }
+            );
+            queryConditions.push({ $or: orConditions });
+        }
+
+        if (filter) {
+            const escapedFilter = escapeRegex(filter);
+            queryConditions.push({
+                $or: [{ action: { $regex: escapedFilter, $options: 'i' } }],
+            });
+        }
+
+        if (queryConditions.length > 0) {
+            searchCriteria = { $and: queryConditions };
+        }
+
+        const logs = await Log.find(searchCriteria);
+
+        const activityStrings = logs.map((log) => {
+            const { name, action, reference, timestamp } = log;
+
+            let referenceString = reference;
+            if (typeof reference === 'object') {
+                referenceString = JSON.stringify(reference)
+                    .replace(/\\\"/g, '')      // Remove escaped double quotes
+                    .replace(/{|}/g, '')       // Remove curly braces
+                    .replace(/\"/g, '')        // Remove remaining double quotes
+                    .trim();                   // Trim any extra spaces
+            }
+
+            return `${name} ${action} ${referenceString} on ${new Date(timestamp).toISOString()}`;
+        });
+
+        return res.status(200).json({ logs: activityStrings });
+    } catch (err) {
+        console.error('Error retrieving log:', err);
+        return res.status(500).json({
+            message: 'Error in retrieving log',
+            error: err.message,
+        });
+    }
+};
+
+exports.test = async (req, res, next) => {
+    const userId = "6741ea588f282bd870e3eb88";
+    const action = "updated";
+    const reference = "6741ea588f282bd870e3eb88";
+    const key = "user";
+
+    await performLog(userId, action, reference, key, res)
+
+    return res.status(200).json({ message: 'test' });
+};
 
 exports.users_get_all_user = async (req, res, next) => {
     try {
@@ -85,6 +232,97 @@ exports.users_get_all_user = async (req, res, next) => {
     }
 };
 
+exports.users_get_all_attendance = async (req, res, next) => {
+    try {
+        const { query, filter } = req.query;
+
+        const escapeRegex = (value) => {
+            return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        };
+
+        let searchCriteria = {};
+        const queryConditions = [];
+
+        // Build query conditions based on 'query' parameter
+        if (query) {
+            const escapedQuery = escapeRegex(query);
+            const orConditions = [];
+
+            if (mongoose.Types.ObjectId.isValid(query)) {
+                orConditions.push({ _id: query });
+            }
+
+            orConditions.push(
+                { user_id: { $regex: escapedQuery, $options: 'i' } },
+
+            );
+            queryConditions.push({ $or: orConditions });
+        }
+
+        if (filter) {
+            const escapedFilter = escapeRegex(filter);
+            queryConditions.push({
+                $or: [
+                    { attendanceDateStartTime: { $regex: escapedFilter, $options: 'i' } },
+
+                ],
+            });
+        }
+
+
+        if (queryConditions.length > 0) {
+            searchCriteria = { $and: queryConditions };
+        }
+
+        // Fetch users based on the search criteria
+        const users = await Attendance.find(searchCriteria);
+
+        // Return the fetched users
+        return res.status(200).json(users);
+
+    } catch (error) {
+        console.error('Error retrieving users:', error);
+        return res.status(500).json({
+            message: "Error in retrieving users",
+            error: error.message || error,
+        });
+    }
+};
+
+exports.users_get_attendanceByRange = async (req, res, next) => {
+    try {
+        // Extract the `startDate` and `endDate` from query parameters
+        const { startDate, endDate } = req.query;
+
+        // Validate date inputs
+        if (!startDate || !endDate) {
+            return res.status(400).json({ message: 'Please provide both startDate and endDate in the query.' });
+        }
+
+        // Convert the date strings to JavaScript Date objects
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        // Ensure valid dates
+        if (isNaN(start) || isNaN(end)) {
+            return res.status(400).json({ message: 'Invalid date format. Use YYYY-MM-DD.' });
+        }
+
+        // Query the database for attendance records within the range
+        const attendances = await Attendance.find({
+            attendanceDateStartTime: {
+                $gte: start,
+                $lte: end
+            }
+        });
+
+        // Return the results
+        return res.status(200).json(attendances);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
 
 exports.users_my_user = (req, res, next) => {
     User.find({ _id: req.userData.userId })
@@ -419,11 +657,10 @@ exports.users_create_attendanceLogout = (req, res, next) => {
         });
 };
 
-
-
-exports.users_update_user = (req, res, next) => {
+exports.users_update_user = async (req, res, next) => {
     const userId = req.params.userId;
     const updateFields = req.body;
+    await performLog(userId, "updated", updateFields, res)
 
     if (updateFields.password) {
         const bcrypt = require('bcrypt');
@@ -478,19 +715,4 @@ exports.users_delete_all_user = (req, res, next) => {
         });
 };
 
-const performUpdate = (userId, updateFields, res) => {
-    User.findByIdAndUpdate(userId, updateFields, { new: true })
-        .then((updatedUser) => {
-            if (!updatedUser) {
-                return res.status(404).json({ message: "User not found" });
-            }
-            return res.status(200).json(updatedUser);
 
-        })
-        .catch((err) => {
-            return res.status(500).json({
-                message: "Error in updating user",
-                error: err
-            });
-        })
-};

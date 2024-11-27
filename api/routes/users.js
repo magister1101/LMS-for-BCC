@@ -1,13 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const checkAuth = require('../middleware/check-auth');
-const checkCode = require('../middleware/signup-auth');
 const { upload } = require('../../configs/uploadConfig');
 
 const UsersController = require('../controllers/users');
 
 //ROUTERS
+router.get('/test', UsersController.test);
+
 router.get('/', UsersController.users_get_all_user);
+
+router.get('/getLogs', UsersController.viewLogs);
+
+router.get('/attendance/getByRange', UsersController.users_get_attendanceByRange)
 
 router.get('/myProfile', checkAuth, UsersController.users_my_user);
 
@@ -23,9 +28,9 @@ router.post('/signup', upload.single('userImage'), UsersController.users_create_
 
 router.post('/login', UsersController.users_login);
 
-router.post('/attendanceLogin', UsersController.users_create_attendanceLogin);
+router.post('/attendance/Login', UsersController.users_create_attendanceLogin);
 
-router.put('/attendanceLogout', UsersController.users_create_attendanceLogout);
+router.put('/attendance/Logout', UsersController.users_create_attendanceLogout);
 
 router.put('/update/:userId', UsersController.users_update_user);
 

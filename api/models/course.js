@@ -9,16 +9,18 @@ const courseSchema = mongoose.Schema({
         name: { type: String },
         description: { type: String },
         activityFile: { type: String },
-        isArchived: { type: Boolean }
+        isArchived: { type: Boolean },
+
+        submissions: [{
+            _id: mongoose.Schema.Types.ObjectId,
+            studentId: { type: String },
+            submissionFile: { type: String },
+            isCompleted: { type: Boolean },
+            isArchived: { type: Boolean },
+        }],
     }],
     courseFile: { type: String },
     isArchived: { type: Boolean, default: false },
-
-    submissions: [{
-        _id: mongoose.Schema.Types.ObjectId,
-        student: { type: String },
-        submissionFile: { type: String },
-    }]
 });
 
 module.exports = mongoose.model('Course', courseSchema);

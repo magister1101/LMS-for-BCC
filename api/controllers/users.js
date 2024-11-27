@@ -6,7 +6,7 @@ const QRCode = require('qrcode');
 const crypto = require('crypto');
 const moment = require('moment');
 const { format } = require('date-fns');
-
+const date = new Date();
 
 const SignupCode = require('../models/signupCode');
 const User = require('../models/user');
@@ -58,18 +58,11 @@ const performLog = async (userId, action, reference, key, res) => {
 
         const name = user.firstName + ' ' + user.lastName;
 
-        const date = new Date();
-        const month = date.getMonth() + 1; // getMonth() returns a zero-indexed value, so we add 1
-        const day = date.getDate();
-        const year = date.getFullYear();
-        const formattedDate = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
-
         const log = new Log({
             _id: new mongoose.Types.ObjectId(),
             name: name,
             action: action,
             reference: newReference,
-            timestamp: formattedDate
         });
 
         await log.save();
@@ -84,6 +77,17 @@ const performLog = async (userId, action, reference, key, res) => {
             });
         }
     }
+};
+
+exports.test = async (req, res, next) => {
+    const userId = "6741ea588f282bd870e3eb88";
+    const action = "updated";
+    const reference = "6741ea588f282bd870e3eb88";
+    const key = "user";
+
+    await performLog(userId, action, reference, key, res)
+
+    return res.status(200).json({ message: 'test' });
 };
 
 exports.viewLogs = async (req, res, next) => {
@@ -135,7 +139,16 @@ exports.viewLogs = async (req, res, next) => {
                     .trim();                   // Trim any extra spaces
             }
 
-            return `${name} ${action} ${referenceString} on ${new Date(timestamp).toISOString()}`;
+            // Format the timestamp to MM/DD/YYYY
+            const date = new Date(timestamp);
+            const month = date.getMonth() + 1; // getMonth() returns a zero-indexed value, so we add 1
+            const day = date.getDate();
+            const year = date.getFullYear();
+
+            const formattedDate = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
+
+            // Return the formatted string
+            return `${name} ${action} ${referenceString} on ${formattedDate}`;
         });
 
         return res.status(200).json({ logs: activityStrings });
@@ -146,17 +159,6 @@ exports.viewLogs = async (req, res, next) => {
             error: err.message,
         });
     }
-};
-
-exports.test = async (req, res, next) => {
-    const userId = "6741ea588f282bd870e3eb88";
-    const action = "updated";
-    const reference = "6741ea588f282bd870e3eb88";
-    const key = "user";
-
-    await performLog(userId, action, reference, key, res)
-
-    return res.status(200).json({ message: 'test' });
 };
 
 exports.users_get_all_user = async (req, res, next) => {

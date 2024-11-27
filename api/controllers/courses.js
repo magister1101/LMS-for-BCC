@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
+const { upload } = require('../../configs/uploadConfigActivity');
 
 const Course = require('../models/course'); //schema route
+const User = require('../models/user'); //schema route
 
 exports.courses_get_all_course = (req, res, next) => { // Course object is reference from course model
     Course.find()
@@ -99,11 +101,9 @@ exports.courses_update_course = (req, res, next) => {
 exports.courses_add_activity = async (req, res, next) => {
     const courseId = req.params.id;
 
-    // Validate file upload
     const { name, description } = req.body;
     let newActivity = {};
 
-    // Validate input fields
     if (!name || !description) {
         return res.status(400).json({ message: 'Name and description are required' });
     }
@@ -128,25 +128,22 @@ exports.courses_add_activity = async (req, res, next) => {
             };
         }
 
-        // Find course and add the activity
         const updatedCourse = await Course.findByIdAndUpdate(
             courseId,
             { $push: { activities: newActivity } },
-            { new: true, runValidators: true } // Return the updated course and validate input
+            { new: true, runValidators: true }
         );
 
-        // Check if the course was found
         if (!updatedCourse) {
             return res.status(404).json({ message: 'Course not found' });
         }
 
-        // Respond with success and updated course
         return res.status(200).json({
             message: 'Activity added successfully',
             updatedCourse,
         });
     } catch (error) {
-        // Handle server errors
+
         return res.status(500).json({ message: error.message });
     }
 };
@@ -252,5 +249,63 @@ exports.get_activity_by_id = async (req, res) => {
             message: 'Error retrieving activity.',
             error: error.message,
         });
+    }
+};
+
+exports.submitActivity = async (req, res) => {
+
+    const courseId = req.params.id;
+    const { activityId, studentId } = req.body;
+    var userInfo;
+    await User.findOne({ _id: studentId })
+        .exec()
+        .then(user => {
+            return userInfo = user;
+        })
+        .catch(err => {
+            return res.status(500).json({
+                error: err
+            });
+        });
+    try {
+        // Check if course exists
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        // Find the activity within the course
+        const activity = course.activities.id(activityId);
+        if (!activity) {
+            return res.status(404).json({ message: 'Activity not found' });
+        }
+
+        // Handle file upload
+        const activityFile = req.file?.path;
+        if (!activityFile) {
+            return res.status(400).json({ message: 'Submission file is required' });
+        }
+
+        // Create a new submission object
+        const newSubmission = {
+            _id: new mongoose.Types.ObjectId(),
+            studentId: userInfo.firstName + " " + userInfo.lastName,
+            submissionFile: activityFile,
+            isCompleted: false,
+            isArchived: false
+        };
+
+        // Add the submission to the activity's submissions array
+        activity.submissions.push(newSubmission);
+
+        // Save the updated course
+        await course.save();
+
+        return res.status(200).json({
+            message: 'Activity submitted successfully',
+            submission: newSubmission,
+        });
+    } catch (error) {
+        return res.status(500).json({ message: 'Server error', error });
     }
 };

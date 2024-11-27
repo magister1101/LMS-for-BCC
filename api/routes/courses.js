@@ -6,11 +6,12 @@ const { upload } = require('../../configs/uploadConfigActivity')
 const CoursesController = require('../controllers/courses');
 
 //ROUTERS
-// router.get('/', CoursesController.courses_get_all_course);
 
 router.get('/activity/:courseId/:activityId', CoursesController.get_activity_by_id);
 
 router.get('/', CoursesController.courses_get_course);
+
+router.post('/activity/submit/:id', upload.single('activityFile'), CoursesController.submitActivity);
 
 router.post('/', CoursesController.courses_create_course);
 

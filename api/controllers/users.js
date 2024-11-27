@@ -90,78 +90,7 @@ exports.test = async (req, res, next) => {
     return res.status(200).json({ message: 'test' });
 };
 
-exports.viewLogs = async (req, res, next) => {
-    try {
-        const { query, filter } = req.query;
-
-        const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-        let searchCriteria = {};
-        const queryConditions = [];
-
-        if (query) {
-            const escapedQuery = escapeRegex(query);
-            const orConditions = [];
-
-            if (mongoose.Types.ObjectId.isValid(query)) {
-                orConditions.push({ _id: query });
-            }
-            // Search by name or reference
-            orConditions.push(
-                { name: { $regex: escapedQuery, $options: 'i' } },
-                { reference: { $regex: escapedQuery, $options: 'i' } }
-            );
-            queryConditions.push({ $or: orConditions });
-        }
-
-        if (filter) {
-            const escapedFilter = escapeRegex(filter);
-            queryConditions.push({
-                $or: [{ action: { $regex: escapedFilter, $options: 'i' } }],
-            });
-        }
-
-        if (queryConditions.length > 0) {
-            searchCriteria = { $and: queryConditions };
-        }
-
-        const logs = await Log.find(searchCriteria);
-
-        const activityStrings = logs.map((log) => {
-            const { name, action, reference, timestamp } = log;
-
-            let referenceString = reference;
-            if (typeof reference === 'object') {
-                referenceString = JSON.stringify(reference)
-                    .replace(/\\\"/g, '')      // Remove escaped double quotes
-                    .replace(/{|}/g, '')       // Remove curly braces
-                    .replace(/\"/g, '')        // Remove remaining double quotes
-                    .trim();                   // Trim any extra spaces
-            }
-
-            // Format the timestamp to MM/DD/YYYY
-            const date = new Date(timestamp);
-            const month = date.getMonth() + 1; // getMonth() returns a zero-indexed value, so we add 1
-            const day = date.getDate();
-            const year = date.getFullYear();
-
-            const formattedDate = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
-
-            // Return the formatted string
-            return `${name} ${action} ${referenceString} on ${formattedDate}`;
-        });
-
-        return res.status(200).json({ logs: activityStrings });
-    } catch (err) {
-        console.error('Error retrieving log:', err);
-        return res.status(500).json({
-            message: 'Error in retrieving log',
-            error: err.message,
-        });
-    }
-};
-
-exports.users_get_all_user = async (req, res, next) => {
+exports.usersGetUser = async (req, res, next) => {
     try {
         const { isArchived, query, filter } = req.query;
 
@@ -234,7 +163,78 @@ exports.users_get_all_user = async (req, res, next) => {
     }
 };
 
-exports.users_get_all_attendance = async (req, res, next) => {
+exports.getLogs = async (req, res, next) => {
+    try {
+        const { query, filter } = req.query;
+
+        const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        let searchCriteria = {};
+        const queryConditions = [];
+
+        if (query) {
+            const escapedQuery = escapeRegex(query);
+            const orConditions = [];
+
+            if (mongoose.Types.ObjectId.isValid(query)) {
+                orConditions.push({ _id: query });
+            }
+            // Search by name or reference
+            orConditions.push(
+                { name: { $regex: escapedQuery, $options: 'i' } },
+                { reference: { $regex: escapedQuery, $options: 'i' } }
+            );
+            queryConditions.push({ $or: orConditions });
+        }
+
+        if (filter) {
+            const escapedFilter = escapeRegex(filter);
+            queryConditions.push({
+                $or: [{ action: { $regex: escapedFilter, $options: 'i' } }],
+            });
+        }
+
+        if (queryConditions.length > 0) {
+            searchCriteria = { $and: queryConditions };
+        }
+
+        const logs = await Log.find(searchCriteria);
+
+        const activityStrings = logs.map((log) => {
+            const { name, action, reference, timestamp } = log;
+
+            let referenceString = reference;
+            if (typeof reference === 'object') {
+                referenceString = JSON.stringify(reference)
+                    .replace(/\\\"/g, '')      // Remove escaped double quotes
+                    .replace(/{|}/g, '')       // Remove curly braces
+                    .replace(/\"/g, '')        // Remove remaining double quotes
+                    .trim();                   // Trim any extra spaces
+            }
+
+            // Format the timestamp to MM/DD/YYYY
+            const date = new Date(timestamp);
+            const month = date.getMonth() + 1; // getMonth() returns a zero-indexed value, so we add 1
+            const day = date.getDate();
+            const year = date.getFullYear();
+
+            const formattedDate = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
+
+            // Return the formatted string
+            return `${name} ${action} ${referenceString} on ${formattedDate}`;
+        });
+
+        return res.status(200).json({ logs: activityStrings });
+    } catch (err) {
+        console.error('Error retrieving log:', err);
+        return res.status(500).json({
+            message: 'Error in retrieving log',
+            error: err.message,
+        });
+    }
+};
+
+exports.usersGetAttendance = async (req, res, next) => {
     try {
         const { query, filter } = req.query;
 
@@ -291,7 +291,7 @@ exports.users_get_all_attendance = async (req, res, next) => {
     }
 };
 
-exports.users_get_attendanceByRange = async (req, res, next) => {
+exports.usersGetAttendanceByRange = async (req, res, next) => {
     try {
         // Extract the `startDate` and `endDate` from query parameters
         const { startDate, endDate } = req.query;
@@ -314,19 +314,28 @@ exports.users_get_attendanceByRange = async (req, res, next) => {
         const attendances = await Attendance.find({
             attendanceDateStartTime: {
                 $gte: start,
-                $lte: end
-            }
-        });
+                $lte: end,
+            },
+        }).lean(); // Convert MongoDB BSON objects to plain JS objects
 
-        // Return the results
-        return res.status(200).json(attendances);
+        // Transform the BSON format to a JSON-compatible format
+        const formattedAttendances = attendances.map((record) => ({
+            _id: record._id.toString(), // Convert ObjectId to string
+            user_id: record.user_id,
+            attendanceDateStartTime: record.attendanceDateStartTime?.toISOString(), // Convert Date to ISO string
+            attendanceDateEndTime: record.attendanceDateEndTime?.toISOString(), // Handle optional Date
+            ...record, // Include other fields in the document
+        }));
+
+        // Return the formatted results
+        return res.status(200).json(formattedAttendances);
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 
-exports.users_my_user = (req, res, next) => {
+exports.usersMyProfile = (req, res, next) => {
     User.find({ _id: req.userData.userId })
         .exec()
         .then(user => {
@@ -339,7 +348,7 @@ exports.users_my_user = (req, res, next) => {
         });
 };
 
-exports.users_token_validation = (req, res, next) => {
+exports.usersTokenValidation = (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
         if (!authHeader) {
@@ -353,20 +362,33 @@ exports.users_token_validation = (req, res, next) => {
     }
 };
 
-exports.users_get_user = (req, res, next) => {
-    User.find({ _id: req.params.userId })
-        .exec()
-        .then(user => {
-            res.status(200).json(user);
+exports.usersGenerateCode = (req, res, next) => {
+
+    const code = crypto.randomBytes(3).toString('hex');
+    const expiresAt = moment().add(59, 'minutes').toISOString();
+
+    const signupCode = new SignupCode({
+        _id: new mongoose.Types.ObjectId(),
+        code: code,
+        expiresAt: expiresAt,
+        used: false,
+    });
+    signupCode
+        .save()
+        .then(result => {
+            return res.status(201).json({
+                message: 'Signup code generated successfully',
+                code: result,
+            });
         })
         .catch(err => {
-            res.status(500).json({
+            return res.status(500).json({
                 error: err
             });
-        });
+        })
 };
 
-exports.users_check_code = (req, res, next) => {
+exports.usersCheckCode = (req, res, next) => {
     SignupCode.findOne({ code: req.body.code })
         .exec()
         .then(code => {
@@ -403,53 +425,28 @@ exports.users_check_code = (req, res, next) => {
         });
 };
 
-exports.users_generate_code = (req, res, next) => {
-
-    const code = crypto.randomBytes(3).toString('hex');
-    const expiresAt = moment().add(59, 'minutes').toISOString();
-
-    const signupCode = new SignupCode({
-        _id: new mongoose.Types.ObjectId(),
-        code: code,
-        expiresAt: expiresAt,
-        used: false,
-    });
-    signupCode
-        .save()
-        .then(result => {
-            return res.status(201).json({
-                message: 'Signup code generated successfully',
-                code: result,
-            });
-        })
-        .catch(err => {
-            return res.status(500).json({
-                error: err
-            });
-        })
-};
-
-exports.users_create_user = (req, res, next) => {
-
+exports.userSignup = (req, res, next) => {
     User.find({ $or: [{ username: req.body.username }, { email: req.body.email }] })
         .exec()
         .then(user => {
             if (user.length >= 1) {
                 return res.status(409).json({
-                    message: 'Email or username already exists '
-                })
-            }
-            else {
-
+                    message: 'Email or username already exists'
+                });
+            } else {
                 bcrypt.hash(req.body.password, 10, (err, hash) => {
                     if (err) {
                         return res.status(500).json({
                             error: err
                         });
                     } else {
-
                         const userId = new mongoose.Types.ObjectId();
-
+                        const { userImage, parentId, schoolId } = req.files;
+                        if (!userImage || !parentId || !schoolId) {
+                            return res.status(400).json({
+                                message: 'All three files (userImage, parentId, schoolId) are required.'
+                            });
+                        }
                         const user = new User({
                             _id: userId,
                             username: req.body.username,
@@ -462,7 +459,7 @@ exports.users_create_user = (req, res, next) => {
                             contactNumber: req.body.contactNumber,
                             birthDate: new Date(req.body.birthDate),
                             school: req.body.school,
-                            //address
+                            // Address
                             country: req.body.country,
                             zipCode: req.body.zipCode,
                             province: req.body.province,
@@ -470,12 +467,12 @@ exports.users_create_user = (req, res, next) => {
                             barangay: req.body.barangay,
                             street: req.body.street,
                             blockAndLot: req.body.blockAndLot,
-                            //guardian info
+                            // Guardian info
                             guardianFirstName: req.body.guardianFirstName,
                             guardianLastName: req.body.guardianLastName,
                             guardianMiddleName: req.body.guardianMiddleName,
                             guardianContactNumber: req.body.guardianContactNumber,
-                            //guardian address
+                            // Guardian address
                             guardianCountry: req.body.guardianCountry,
                             guardianZipCode: req.body.guardianZipCode,
                             guardianProvince: req.body.guardianProvince,
@@ -483,14 +480,18 @@ exports.users_create_user = (req, res, next) => {
                             guardianBarangay: req.body.guardianBarangay,
                             guardianStreet: req.body.guardianStreet,
                             guardianBlockAndLot: req.body.guardianBlockAndLot,
-                            //userimage
-                            userImage: req.file.path,
+                            // File paths
+                            userImage: userImage[0].path, // Primary image
+                            parentId: parentId[0].path, // First additional file
+                            schoolId: schoolId[0].path, // Second additional file
                         });
+
                         user
                             .save()
                             .then(async result => {
                                 const qrCodeFilePath = path.join(__dirname, '../../uploads', `qrcode-${userId}.png`);
 
+                                // Generate a QR Code
                                 QRCode.toFile(qrCodeFilePath, userId.toString(), (err) => {
                                     if (err) {
                                         return res.status(500).json({
@@ -506,21 +507,21 @@ exports.users_create_user = (req, res, next) => {
                                         message: 'User created successfully',
                                         user: result,
                                         qrCodefilePath: qrCodeFilePath,
-                                    })
-                                })
+                                    });
+                                });
                             })
                             .catch(err => {
                                 return res.status(500).json({
                                     error: err
                                 });
-                            })
+                            });
                     }
-                })
+                });
             }
-        })
+        });
 };
 
-exports.users_login = (req, res, next) => {
+exports.usersLogin = (req, res, next) => {
     User.find({ username: req.body.username })
         .exec()
         .then(user => {
@@ -564,7 +565,7 @@ exports.users_login = (req, res, next) => {
 
 };
 
-exports.users_create_attendanceLogin = (req, res, next) => {
+exports.usersCreateAttendanceLogin = (req, res, next) => {
     const userId = req.body.user_id
     console.log(userId)
     const currentDate = new Date();
@@ -604,7 +605,7 @@ exports.users_create_attendanceLogin = (req, res, next) => {
         });
 };
 
-exports.users_create_attendanceLogout = (req, res, next) => {
+exports.usersCreateAttendanceLogout = (req, res, next) => {
     const userId = req.body.user_id;
     console.log("User ID:", userId);
 
@@ -659,7 +660,7 @@ exports.users_create_attendanceLogout = (req, res, next) => {
         });
 };
 
-exports.users_update_user = async (req, res, next) => {
+exports.usersUpdateUser = async (req, res, next) => {
     const userId = req.params.userId;
     const updateFields = req.body;
     await performLog(userId, "updated", updateFields, res)
@@ -684,37 +685,7 @@ exports.users_update_user = async (req, res, next) => {
     }
 };
 
-exports.users_delete_user = (req, res, next) => {
-    const id = req.params.userId
-    User.deleteOne({
-        _id: id
-    })
-        .exec()
-        .then(result => {
-            return res.status(200).json({
-                message: 'User Deleted',
-            })
-        })
-        .catch(err => {
-            return res.status(500).json({
-                error: err
-            })
-        })
-};
 
-exports.users_delete_all_user = (req, res, next) => {
-    User.deleteMany({})
-        .exec()
-        .then(result => {
-            return res.status(200).json({
-                message: "All users deleted",
-            });
-        })
-        .catch(err => {
-            return res.status(500).json({
-                error: err
-            });
-        });
-};
+
 
 

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { type } = require('os');
 
 const userSchema = mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
@@ -11,7 +10,7 @@ const userSchema = mongoose.Schema({
     middleName: { type: String },
     gender: { type: String, required: true, },
     contactNumber: { type: String, required: true },
-    birthDate: { type: Date, required: true, default: "none" },
+    birthDate: { type: Date, required: true },
     school: { type: String, required: true, default: "none" },
 
     //address
@@ -41,6 +40,8 @@ const userSchema = mongoose.Schema({
     //image
     qrCode: { type: String },
     userImage: { type: String, required: true },
+    parentId: { type: String, required: true, default: "none" },
+    schoolId: { type: String, required: true, default: "none" },
 
     //title
     title: { type: String, required: true, default: "member" }, //member, instructor, admin

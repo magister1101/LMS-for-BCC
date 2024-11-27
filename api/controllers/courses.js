@@ -3,34 +3,96 @@ const { upload } = require('../../configs/uploadConfigActivity');
 
 const Course = require('../models/course'); //schema route
 const User = require('../models/user'); //schema route
+const Log = require('../models/log'); //schema route
 
-exports.courses_get_all_course = (req, res, next) => { // Course object is reference from course model
-    Course.find()
-        .exec()
-        .then(doc => {
-            const response = {
-                count: doc.length,
-                course: doc
+
+const performUpdate = (id, updateFields, res) => {
+    Course.findByIdAndUpdate(id, updateFields, { new: true })
+        .then((updated) => {
+            if (!updated) {
+                return res.status(404).json({ message: "Course Not Found" });
             }
-            if (doc.length > 0) {
-                return res.status(200).json(response)
-            }
-            else {
-                return res.status(404).json({
-                    message: 'No Course Entries Found'
-                })
-            }
+            return res.status(200).json(updated);
 
         })
-        .catch(err => {
+        .catch((err) => {
             return res.status(500).json({
-                error: err,
-            })
-        }
-        )
+                message: "Error in updating Course",
+                error: err
+            });
+        })
 };
 
-exports.courses_get_course = async (req, res, next) => {
+const performActivityUpdate = (courseId, activityId, updateFields, res) => {
+    Course.findOneAndUpdate(
+        { _id: courseId, "activities._id": activityId }, // Match course and activity
+        { $set: { "activities.$": { ...updateFields, _id: activityId } } }, // Update activity fields
+        { new: true, runValidators: true } // Return updated document, validate fields
+    )
+        .then((updatedCourse) => {
+            if (!updatedCourse) {
+                return res.status(404).json({ message: "Course or Activity Not Found" });
+            }
+            return res.status(200).json({
+                message: "Activity updated successfully",
+                updatedCourse,
+            });
+        })
+        .catch((err) => {
+            return res.status(500).json({
+                message: "Error in updating Activity",
+                error: err,
+            });
+        });
+};
+
+const performLog = async (userId, action, reference, key, res) => {
+    try {
+        const user = await User.findOne({ _id: userId });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        var newReference = null;
+
+        if (key === 'user') {
+            const _user = await User.findOne({ _id: reference });
+            newReference = _user.firstName + ' ' + _user.lastName + ' (USER)';
+        }
+        else if (key === 'course') {
+            const _course = await Course.findOne({ _id: reference });
+            newReference = _course.name + ' (COURSE)';
+        }
+        else if (key === 'activity') {
+            const _activity = await Course.activities.findOne({ _id: reference });
+            newReference = _activity.name + ' (ACTIVITY)';
+        } else {
+            return res.status(400).json({ message: 'Invalid key' });
+        }
+
+        const name = user.firstName + ' ' + user.lastName;
+
+        const log = new Log({
+            _id: new mongoose.Types.ObjectId(),
+            name: name,
+            action: action,
+            reference: newReference,
+        });
+
+        await log.save();
+        return console.log({ message: 'Log saved successfully', log });
+
+    } catch (err) {
+        console.error('Error performing log:', err);
+        if (res) {
+            return console.error({
+                message: 'Error in performing log',
+                error: err.message
+            });
+        }
+    }
+};
+
+exports.coursesGetCourse = async (req, res, next) => {
     try {
         const { isArchived, query } = req.query;
         const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -70,170 +132,19 @@ exports.courses_get_course = async (req, res, next) => {
     }
 };
 
-exports.courses_create_course = (req, res, next) => {
-
-    const course = new Course({
-        _id: new mongoose.Types.ObjectId(),
-        name: req.body.name,
-        description: req.body.description,
-        courseFile: req.body.courseFile,
-    });
-    course.save().then(result => {
-        return res.status(201).json({
-            message: 'Course created',
-            course: result,
-
-        })
-    })
-        .catch(err => {
-            return res.status(500).json({
-                error: err
-            })
-        })
-};
-
-exports.courses_update_course = (req, res, next) => {
-    const { id } = req.params;
-    const updateFields = req.body;
-    performUpdate(id, updateFields, res);
-};
-
-exports.courses_add_activity = async (req, res, next) => {
-    const courseId = req.params.id;
-
-    const { name, description } = req.body;
-    let newActivity = {};
-
-    if (!name || !description) {
-        return res.status(400).json({ message: 'Name and description are required' });
-    }
-
-    try {
-        if (req.file) {
-            const activityFile = req.file.path;
-            newActivity = {
-                _id: new mongoose.Types.ObjectId(),
-                name,
-                description,
-                activityFile,
-                isArchived: false,
-            };
-        }
-        else {
-            newActivity = {
-                _id: new mongoose.Types.ObjectId(),
-                name,
-                description,
-                isArchived: false,
-            };
-        }
-
-        const updatedCourse = await Course.findByIdAndUpdate(
-            courseId,
-            { $push: { activities: newActivity } },
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedCourse) {
-            return res.status(404).json({ message: 'Course not found' });
-        }
-
-        return res.status(200).json({
-            message: 'Activity added successfully',
-            updatedCourse,
-        });
-    } catch (error) {
-
-        return res.status(500).json({ message: error.message });
-    }
-};
-
-exports.courses_delete_course = (req, res, next) => {
-    const id = req.params.id
-    Course.deleteOne({
-        _id: id
-    })
-        .exec()
-        .then(result => {
-            return res.status(200).json({
-                message: 'Course Deleted',
-                request: {
-                    type: 'POST',
-                    url: process.env.DOMAIN + process.env.PORT + '/courses',
-                    body: { name: 'String', description: 'String' }
-                }
-            })
-        })
-        .catch(err => {
-            return res.status(500).json({
-                error: err
-            })
-        })
-};
-
-const performUpdate = (id, updateFields, res) => {
-    Course.findByIdAndUpdate(id, updateFields, { new: true })
-        .then((updated) => {
-            if (!updated) {
-                return res.status(404).json({ message: "Course Not Found" });
-            }
-            return res.status(200).json(updated);
-
-        })
-        .catch((err) => {
-            return res.status(500).json({
-                message: "Error in updating Course",
-                error: err
-            });
-        })
-};
-
-exports.courses_update_activity = (req, res, next) => {
-    const { courseId, activityId } = req.params;
-    const updateFields = req.body;
-
-    performActivityUpdate(courseId, activityId, updateFields, res);
-};
-
-const performActivityUpdate = (courseId, activityId, updateFields, res) => {
-    Course.findOneAndUpdate(
-        { _id: courseId, "activities._id": activityId }, // Match course and activity
-        { $set: { "activities.$": { ...updateFields, _id: activityId } } }, // Update activity fields
-        { new: true, runValidators: true } // Return updated document, validate fields
-    )
-        .then((updatedCourse) => {
-            if (!updatedCourse) {
-                return res.status(404).json({ message: "Course or Activity Not Found" });
-            }
-            return res.status(200).json({
-                message: "Activity updated successfully",
-                updatedCourse,
-            });
-        })
-        .catch((err) => {
-            return res.status(500).json({
-                message: "Error in updating Activity",
-                error: err,
-            });
-        });
-};
-
-exports.get_activity_by_id = async (req, res) => {
+exports.getActivityById = async (req, res) => {
     try {
         const { courseId, activityId } = req.params;
 
-        // Validate courseId and activityId
         if (!mongoose.Types.ObjectId.isValid(courseId) || !mongoose.Types.ObjectId.isValid(activityId)) {
             return res.status(400).json({ message: 'Invalid courseId or activityId.' });
         }
 
-        // Find the course and filter for the specific activity
         const course = await Course.findById(courseId);
         if (!course) {
             return res.status(404).json({ message: 'Course not found.' });
         }
 
-        // Find the specific activity
         const activity = course.activities.find(
             (activity) => activity._id.toString() === activityId
         );
@@ -281,8 +192,8 @@ exports.submitActivity = async (req, res) => {
         }
 
         // Handle file upload
-        const activityFile = req.file?.path;
-        if (!activityFile) {
+        const file = req.file?.path;
+        if (!file) {
             return res.status(400).json({ message: 'Submission file is required' });
         }
 
@@ -290,7 +201,7 @@ exports.submitActivity = async (req, res) => {
         const newSubmission = {
             _id: new mongoose.Types.ObjectId(),
             studentId: userInfo.firstName + " " + userInfo.lastName,
-            submissionFile: activityFile,
+            submissionFile: file,
             isCompleted: false,
             isArchived: false
         };
@@ -309,3 +220,96 @@ exports.submitActivity = async (req, res) => {
         return res.status(500).json({ message: 'Server error', error });
     }
 };
+
+exports.coursesCreateCourse = (req, res, next) => {
+
+    const course = new Course({
+        _id: new mongoose.Types.ObjectId(),
+        name: req.body.name,
+        description: req.body.description,
+        file: req.file?.path,
+    });
+    course.save().then(result => {
+        return res.status(201).json({
+            message: 'Course created',
+            course: result,
+
+        })
+    })
+        .catch(err => {
+            return res.status(500).json({
+                error: err
+            })
+        })
+};
+
+exports.coursesUpdateCourse = (req, res, next) => {
+    const { id } = req.params;
+    const updateFields = req.body;
+    performUpdate(id, updateFields, res);
+};
+
+exports.coursesAddActivity = async (req, res, next) => {
+    const userId = req.userData.userId;
+    const courseId = req.params.id;
+
+    const { name, description } = req.body;
+    let newActivity = {};
+
+    if (!name || !description) {
+        return res.status(400).json({ message: 'Name and description are required' });
+    }
+
+    try {
+        if (req.file) {
+            const file = req.file.path;
+            newActivity = {
+                _id: new mongoose.Types.ObjectId(),
+                name,
+                description,
+                activityFile: file,
+                isArchived: false,
+            };
+        }
+        else {
+            newActivity = {
+                _id: new mongoose.Types.ObjectId(),
+                name,
+                description,
+                isArchived: false,
+            };
+        }
+
+        const updatedCourse = await Course.findByIdAndUpdate(
+            courseId,
+            { $push: { activities: newActivity } },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedCourse) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        performLog(userId, 'created', courseId, 'activity', res)
+        return res.status(200).json({
+            message: 'Activity added successfully',
+            updatedCourse,
+        });
+    } catch (error) {
+
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+exports.coursesUpdateActivity = (req, res, next) => {
+    const { courseId, activityId } = req.params;
+    const updateFields = req.body;
+    const userId = req.userData.userId;
+    performLog(userId, 'updated', activityId, 'activity', res)
+    performActivityUpdate(courseId, activityId, updateFields, res);
+    return res.status(200).json({ message: 'Activity updated successfully' })
+};
+
+
+
+

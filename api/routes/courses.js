@@ -6,21 +6,19 @@ const { upload } = require('../../configs/uploadConfigActivity')
 const CoursesController = require('../controllers/courses');
 
 //ROUTERS
+router.get('/', CoursesController.coursesGetCourse);
 
-router.get('/activity/:courseId/:activityId', CoursesController.get_activity_by_id);
+router.get('/activity/:courseId/:activityId', CoursesController.getActivityById);
 
-router.get('/', CoursesController.courses_get_course);
+router.post('/activity/submit/:id', upload.single('file'), CoursesController.submitActivity);
 
-router.post('/activity/submit/:id', upload.single('activityFile'), CoursesController.submitActivity);
+router.post('/', upload.single('file'), CoursesController.coursesCreateCourse);
 
-router.post('/', CoursesController.courses_create_course);
+router.put('/update/:id', CoursesController.coursesUpdateCourse);
 
-router.put('/update/:id', CoursesController.courses_update_course);
+router.put('/activity/add/:id', checkAuth, upload.single('file'), CoursesController.coursesAddActivity);
 
-router.put('/addActivity/:id', upload.single('activityFile'), CoursesController.courses_add_activity);
+router.put('/activity/update/:courseId/:activityId', checkAuth, CoursesController.coursesUpdateActivity);
 
-router.put('/updateActivity/:courseId/:activityId', CoursesController.courses_update_activity);
-
-router.delete('/:id', CoursesController.courses_delete_course);
 
 module.exports = router;

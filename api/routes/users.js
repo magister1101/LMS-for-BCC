@@ -8,35 +8,31 @@ const UsersController = require('../controllers/users');
 //ROUTERS
 router.get('/test', UsersController.test);
 
-router.get('/', UsersController.users_get_all_user);
+router.get('/', UsersController.usersGetUser); //query
 
-router.get('/getLogs', UsersController.viewLogs);
+router.get('/logs', UsersController.getLogs);
 
-router.get('/attendance/getByRange', UsersController.users_get_attendanceByRange)
+router.get('/attendance/getAttendance', UsersController.usersGetAttendance)
 
-router.get('/myProfile', checkAuth, UsersController.users_my_user);
+router.get('/attendance/getByRange', UsersController.usersGetAttendanceByRange) //?startDate=2024-11-01&endDate=2024-11-30
 
-router.get('/tokenValidation', UsersController.users_token_validation);
+router.get('/myProfile', checkAuth, UsersController.usersMyProfile);
 
-router.get('/generateCode', UsersController.users_generate_code);
+router.get('/tokenValidation', UsersController.usersTokenValidation);
 
-router.get('/:userId', UsersController.users_get_user);
+router.get('/signup/generateCode', UsersController.usersGenerateCode);
 
-router.post('/checkCode', UsersController.users_check_code);
+router.post('/signup/checkCode', UsersController.usersCheckCode);
 
-router.post('/signup', upload.single('userImage'), UsersController.users_create_user); // add multiple data, photocopy of parents ID, and photocopy of student ID
+router.post('/signup', upload.fields([{ name: 'userImage', maxCount: 1 }, { name: 'parentId', maxCount: 1 }, { name: 'schoolId', maxCount: 1 },]), UsersController.userSignup);
 
-router.post('/login', UsersController.users_login);
+router.post('/login', UsersController.usersLogin);
 
-router.post('/attendance/Login', UsersController.users_create_attendanceLogin);
+router.post('/attendance/Login', UsersController.usersCreateAttendanceLogin);
 
-router.put('/attendance/Logout', UsersController.users_create_attendanceLogout);
+router.put('/attendance/Logout', UsersController.usersCreateAttendanceLogout);
 
-router.put('/update/:userId', UsersController.users_update_user);
-
-router.delete('/:userId', UsersController.users_delete_user);
-
-router.delete('/deleteAll', UsersController.users_delete_all_user);
+router.put('/update/:userId', UsersController.usersUpdateUser);
 
 
 module.exports = router;

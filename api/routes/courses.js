@@ -10,7 +10,7 @@ router.get('/', CoursesController.coursesGetCourse);
 
 router.get('/activity/:courseId/:activityId', CoursesController.getActivityById);
 
-router.post('/activity/submit/:id', upload.single('file'), CoursesController.submitActivity);
+router.post('/activity/submit/:courseId/:activityId', checkAuth, upload.single('file'), CoursesController.submitActivity);
 
 router.post('/', upload.single('file'), CoursesController.coursesCreateCourse);
 
@@ -20,5 +20,6 @@ router.put('/activity/add/:id', checkAuth, upload.single('file'), CoursesControl
 
 router.put('/activity/update/:courseId/:activityId', checkAuth, CoursesController.coursesUpdateActivity);
 
+router.put('/submission/update/:courseId/:activityId/:submissionId', checkAuth, CoursesController.activityUpdateSubmission);
 
 module.exports = router;

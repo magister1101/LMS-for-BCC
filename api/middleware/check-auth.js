@@ -8,10 +8,10 @@ module.exports = (req, res, next) => {
         }
 
         const token = authHeader.split(' ')[1];
-        console.log("Received token:", token); // Debug log
+        // console.log("Received token:", token); // Debug log
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("Decoded token:", decoded); // Debug log
+        // console.log("Decoded token:", decoded); // Debug log
 
         req.userData = decoded;
         next();

@@ -4,6 +4,7 @@ const { upload } = require('../../configs/uploadConfigActivity');
 const Course = require('../models/course'); //schema route
 const User = require('../models/user'); //schema route
 const Log = require('../models/log'); //schema route
+const user = require('../models/user');
 
 
 const performUpdate = (id, updateFields, res) => {
@@ -46,11 +47,47 @@ const performActivityUpdate = (courseId, activityId, updateFields, res) => {
         });
 };
 
+const performSubmissionUpdate = async (courseId, activityId, submissionId, updateData, res) => {
+
+    try {
+        // Find the course and update the specific submission
+        const course = await Course.findOneAndUpdate(
+            {
+                _id: courseId,
+                'activities._id': activityId,
+                'activities.submissions._id': submissionId,
+            },
+            {
+                $set: Object.keys(updateData).reduce((acc, key) => {
+                    acc[`activities.$.submissions.$[submission].${key}`] = updateData[key];
+                    return acc;
+                }, {}),
+            },
+            {
+                arrayFilters: [{ 'submission._id': submissionId }],
+                new: true,
+            }
+        );
+
+        if (!course) {
+            return console.log({ message: 'Course, activity, or submission not found' });
+        }
+
+        console.log({
+            message: 'Submission updated successfully',
+            updatedSubmission: updateData,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'An error occurred while updating the submission', error });
+    }
+};
+
 const performLog = async (userId, action, reference, key, res) => {
     try {
         const user = await User.findOne({ _id: userId });
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return console.log({ message: 'User not found' });
         }
         var newReference = null;
 
@@ -66,7 +103,7 @@ const performLog = async (userId, action, reference, key, res) => {
             const _activity = await Course.activities.findOne({ _id: reference });
             newReference = _activity.name + ' (ACTIVITY)';
         } else {
-            return res.status(400).json({ message: 'Invalid key' });
+            return console.log({ message: 'Invalid key' });
         }
 
         const name = user.firstName + ' ' + user.lastName;
@@ -83,12 +120,11 @@ const performLog = async (userId, action, reference, key, res) => {
 
     } catch (err) {
         console.error('Error performing log:', err);
-        if (res) {
-            return console.error({
-                message: 'Error in performing log',
-                error: err.message
-            });
-        }
+        return console.error({
+            message: 'Error in performing log',
+            error: err.message
+        });
+
     }
 };
 
@@ -164,23 +200,18 @@ exports.getActivityById = async (req, res) => {
 };
 
 exports.submitActivity = async (req, res) => {
-
-    const courseId = req.params.id;
-    const { activityId, studentId } = req.body;
-    var userInfo;
-    await User.findOne({ _id: studentId })
-        .exec()
-        .then(user => {
-            return userInfo = user;
-        })
-        .catch(err => {
-            return res.status(500).json({
-                error: err
-            });
-        });
     try {
+        const { courseId, activityId } = req.params;
+        const studentId = req.userData.userId;
+
+        // Fetch user information
+        const userInfo = await User.findById(studentId).exec();
+        if (!userInfo) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
         // Check if course exists
-        const course = await Course.findById(courseId);
+        const course = await Course.findById(courseId).exec();
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
         }
@@ -200,10 +231,11 @@ exports.submitActivity = async (req, res) => {
         // Create a new submission object
         const newSubmission = {
             _id: new mongoose.Types.ObjectId(),
-            studentId: userInfo.firstName + " " + userInfo.lastName,
-            submissionFile: file,
+            studentId: studentId,
+            studentName: `${userInfo.firstName} ${userInfo.lastName}`,
+            file: file,
             isCompleted: false,
-            isArchived: false
+            isArchived: false,
         };
 
         // Add the submission to the activity's submissions array
@@ -217,7 +249,7 @@ exports.submitActivity = async (req, res) => {
             submission: newSubmission,
         });
     } catch (error) {
-        return res.status(500).json({ message: 'Server error', error });
+        return res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 
@@ -267,7 +299,7 @@ exports.coursesAddActivity = async (req, res, next) => {
                 _id: new mongoose.Types.ObjectId(),
                 name,
                 description,
-                activityFile: file,
+                file,
                 isArchived: false,
             };
         }
@@ -308,6 +340,20 @@ exports.coursesUpdateActivity = (req, res, next) => {
     performLog(userId, 'updated', activityId, 'activity', res)
     performActivityUpdate(courseId, activityId, updateFields, res);
     return res.status(200).json({ message: 'Activity updated successfully' })
+};
+
+exports.activityUpdateSubmission = async (req, res, next) => {
+    const { courseId, activityId, submissionId } = req.params;
+    const updateFields = req.body;
+    const userId = req.userData.userId;
+    console.log({
+        userId,
+        activityId,
+        submissionId,
+    })
+    performLog(userId, 'submitted', activityId, 'activity', res)
+    performSubmissionUpdate(courseId, activityId, submissionId, updateFields, res);
+    return res.status(200).json({ message: 'Submission updated successfully' })
 };
 
 

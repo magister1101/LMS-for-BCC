@@ -11,6 +11,7 @@ const dotenv = require('dotenv').config();
 
 const courseRoutes = require('./api/routes/courses');
 const userRoutes = require('./api/routes/users');
+const configRouutes = require('./api/routes/configs');
 
 
 
@@ -42,6 +43,7 @@ app.use((req, res, next) => {
 // routes
 app.use('/courses', courseRoutes);
 app.use('/users', userRoutes);
+app.use('/configs', configRouutes);
 
 
 

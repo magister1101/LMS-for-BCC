@@ -8,18 +8,19 @@ const courseSchema = mongoose.Schema({
         _id: mongoose.Schema.Types.ObjectId,
         name: { type: String },
         description: { type: String },
-        activityFile: { type: String },
+        file: { type: String },
         isArchived: { type: Boolean },
 
         submissions: [{
             _id: mongoose.Schema.Types.ObjectId,
             studentId: { type: String },
-            submissionFile: { type: String },
+            studentName: { type: String },
+            file: { type: String },
             isCompleted: { type: Boolean },
             isArchived: { type: Boolean },
         }],
     }],
-    courseFile: { type: String },
+    file: { type: String },
     isArchived: { type: Boolean, default: false },
 });
 

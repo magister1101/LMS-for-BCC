@@ -5,8 +5,6 @@ const path = require('path');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const moment = require('moment');
-const { format } = require('date-fns');
-const date = new Date();
 
 const SignupCode = require('../models/signupCode');
 const User = require('../models/user');
@@ -163,6 +161,77 @@ exports.usersGetUser = async (req, res, next) => {
     }
 };
 
+// exports.getLogs = async (req, res, next) => {
+//     try {
+//         const { query, filter } = req.query;
+
+//         const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+//         let searchCriteria = {};
+//         const queryConditions = [];
+
+//         if (query) {
+//             const escapedQuery = escapeRegex(query);
+//             const orConditions = [];
+
+//             if (mongoose.Types.ObjectId.isValid(query)) {
+//                 orConditions.push({ _id: query });
+//             }
+//             // Search by name or reference
+//             orConditions.push(
+//                 { name: { $regex: escapedQuery, $options: 'i' } },
+//                 { reference: { $regex: escapedQuery, $options: 'i' } }
+//             );
+//             queryConditions.push({ $or: orConditions });
+//         }
+
+//         if (filter) {
+//             const escapedFilter = escapeRegex(filter);
+//             queryConditions.push({
+//                 $or: [{ action: { $regex: escapedFilter, $options: 'i' } }],
+//             });
+//         }
+
+//         if (queryConditions.length > 0) {
+//             searchCriteria = { $and: queryConditions };
+//         }
+
+//         const logs = await Log.find(searchCriteria);
+
+//         const activityStrings = logs.map((log) => {
+//             const { name, action, reference, timestamp } = log;
+
+//             let referenceString = reference;
+//             if (typeof reference === 'object') {
+//                 referenceString = JSON.stringify(reference)
+//                     .replace(/\\\"/g, '')      // Remove escaped double quotes
+//                     .replace(/{|}/g, '')       // Remove curly braces
+//                     .replace(/\"/g, '')        // Remove remaining double quotes
+//                     .trim();                   // Trim any extra spaces
+//             }
+
+//             // Format the timestamp to MM/DD/YYYY
+//             const date = new Date(timestamp);
+//             const month = date.getMonth() + 1; // getMonth() returns a zero-indexed value, so we add 1
+//             const day = date.getDate();
+//             const year = date.getFullYear();
+
+//             const formattedDate = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
+
+//             // Return the formatted string
+//             return { entry: `${name} ${action} ${referenceString} on ${formattedDate}` };
+//         });
+
+//         return res.status(200).json({ logs: activityStrings });
+//     } catch (err) {
+//         console.error('Error retrieving log:', err);
+//         return res.status(500).json({
+//             message: 'Error in retrieving log',
+//             error: err.message,
+//         });
+//     }
+// };
+
 exports.getLogs = async (req, res, next) => {
     try {
         const { query, filter } = req.query;
@@ -200,31 +269,7 @@ exports.getLogs = async (req, res, next) => {
 
         const logs = await Log.find(searchCriteria);
 
-        const activityStrings = logs.map((log) => {
-            const { name, action, reference, timestamp } = log;
-
-            let referenceString = reference;
-            if (typeof reference === 'object') {
-                referenceString = JSON.stringify(reference)
-                    .replace(/\\\"/g, '')      // Remove escaped double quotes
-                    .replace(/{|}/g, '')       // Remove curly braces
-                    .replace(/\"/g, '')        // Remove remaining double quotes
-                    .trim();                   // Trim any extra spaces
-            }
-
-            // Format the timestamp to MM/DD/YYYY
-            const date = new Date(timestamp);
-            const month = date.getMonth() + 1; // getMonth() returns a zero-indexed value, so we add 1
-            const day = date.getDate();
-            const year = date.getFullYear();
-
-            const formattedDate = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
-
-            // Return the formatted string
-            return `${name} ${action} ${referenceString} on ${formattedDate}`;
-        });
-
-        return res.status(200).json({ logs: activityStrings });
+        return res.status(200).json({ logs });
     } catch (err) {
         console.error('Error retrieving log:', err);
         return res.status(500).json({
@@ -425,101 +470,85 @@ exports.usersCheckCode = (req, res, next) => {
         });
 };
 
-exports.userSignup = (req, res, next) => {
-    User.find({ $or: [{ username: req.body.username }, { email: req.body.email }] })
-        .exec()
-        .then(user => {
-            if (user.length >= 1) {
-                return res.status(409).json({
-                    message: 'Email or username already exists'
-                });
-            } else {
-                bcrypt.hash(req.body.password, 10, (err, hash) => {
-                    if (err) {
-                        return res.status(500).json({
-                            error: err
-                        });
-                    } else {
-                        const userId = new mongoose.Types.ObjectId();
-                        const { userImage, parentId, schoolId } = req.files;
-                        if (!userImage || !parentId || !schoolId) {
-                            return res.status(400).json({
-                                message: 'All three files (userImage, parentId, schoolId) are required.'
-                            });
-                        }
-                        const user = new User({
-                            _id: userId,
-                            username: req.body.username,
-                            password: hash,
-                            email: req.body.email,
-                            firstName: req.body.firstName,
-                            lastName: req.body.lastName,
-                            middleName: req.body.middleName,
-                            gender: req.body.gender,
-                            contactNumber: req.body.contactNumber,
-                            birthDate: new Date(req.body.birthDate),
-                            school: req.body.school,
-                            // Address
-                            country: req.body.country,
-                            zipCode: req.body.zipCode,
-                            province: req.body.province,
-                            municipality: req.body.municipality,
-                            barangay: req.body.barangay,
-                            street: req.body.street,
-                            blockAndLot: req.body.blockAndLot,
-                            // Guardian info
-                            guardianFirstName: req.body.guardianFirstName,
-                            guardianLastName: req.body.guardianLastName,
-                            guardianMiddleName: req.body.guardianMiddleName,
-                            guardianContactNumber: req.body.guardianContactNumber,
-                            // Guardian address
-                            guardianCountry: req.body.guardianCountry,
-                            guardianZipCode: req.body.guardianZipCode,
-                            guardianProvince: req.body.guardianProvince,
-                            guardianMunicipality: req.body.guardianMunicipality,
-                            guardianBarangay: req.body.guardianBarangay,
-                            guardianStreet: req.body.guardianStreet,
-                            guardianBlockAndLot: req.body.guardianBlockAndLot,
-                            // File paths
-                            userImage: userImage[0].path, // Primary image
-                            parentId: parentId[0].path, // First additional file
-                            schoolId: schoolId[0].path, // Second additional file
-                        });
-
-                        user
-                            .save()
-                            .then(async result => {
-                                const qrCodeFilePath = path.join(__dirname, '../../uploads', `qrcode-${userId}.png`);
-
-                                // Generate a QR Code
-                                QRCode.toFile(qrCodeFilePath, userId.toString(), (err) => {
-                                    if (err) {
-                                        return res.status(500).json({
-                                            message: "Error Generating QR Code",
-                                            error: err
-                                        });
-                                    }
-
-                                    user.qrCode = qrCodeFilePath;
-                                    user.save();
-
-                                    return res.status(201).json({
-                                        message: 'User created successfully',
-                                        user: result,
-                                        qrCodefilePath: qrCodeFilePath,
-                                    });
-                                });
-                            })
-                            .catch(err => {
-                                return res.status(500).json({
-                                    error: err
-                                });
-                            });
-                    }
-                });
-            }
+exports.userSignup = async (req, res, next) => {
+    try {
+        // Check if the username or email already exists
+        const existingUser = await User.find({
+            $or: [{ username: req.body.username }, { email: req.body.email }]
         });
+
+        if (existingUser.length >= 1) {
+            return res.status(409).json({
+                message: 'Email or username already exists',
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
+        const { userImage, parentId, schoolId } = req.files;
+        if (!userImage || !parentId || !schoolId) {
+            return res.status(400).json({
+                message: 'All three files (userImage, parentId, schoolId) are required.',
+            });
+        }
+
+        // Create a new user instance
+        const userId = new mongoose.Types.ObjectId();
+        const user = new User({
+            _id: userId,
+            username: req.body.username,
+            password: hashedPassword,
+            email: req.body.email,
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            middleName: req.body.middleName,
+            gender: req.body.gender,
+            contactNumber: req.body.contactNumber,
+            birthDate: new Date(req.body.birthDate),
+            school: req.body.school,
+            // Address
+            country: req.body.country,
+            zipCode: req.body.zipCode,
+            province: req.body.province,
+            municipality: req.body.municipality,
+            barangay: req.body.barangay,
+            street: req.body.street,
+            blockAndLot: req.body.blockAndLot,
+            // Guardian info
+            guardianFirstName: req.body.guardianFirstName,
+            guardianLastName: req.body.guardianLastName,
+            guardianMiddleName: req.body.guardianMiddleName,
+            guardianContactNumber: req.body.guardianContactNumber,
+            // Guardian address
+            guardianCountry: req.body.guardianCountry,
+            guardianZipCode: req.body.guardianZipCode,
+            guardianProvince: req.body.guardianProvince,
+            guardianMunicipality: req.body.guardianMunicipality,
+            guardianBarangay: req.body.guardianBarangay,
+            guardianStreet: req.body.guardianStreet,
+            guardianBlockAndLot: req.body.guardianBlockAndLot,
+            // File paths
+            userImage: userImage[0].path, // Primary image
+            parentId: parentId[0].path,   // First additional file
+            schoolId: schoolId[0].path,  // Second additional file
+        });
+
+
+        const savedUser = await user.save();
+
+        return res.status(201).json({
+            message: 'User created successfully',
+            user: savedUser,
+        });
+    } catch (error) {
+        // Catch and handle errors
+        return res.status(500).json({
+            message: 'An error occurred during user signup',
+            error: error.message,
+        });
+    }
 };
+
 
 exports.usersLogin = (req, res, next) => {
     User.find({ username: req.body.username })

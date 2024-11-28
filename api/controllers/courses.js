@@ -100,7 +100,7 @@ const performLog = async (userId, action, reference, key, res) => {
             newReference = _course.name + ' (COURSE)';
         }
         else if (key === 'activity') {
-            const _activity = await Course.activities.findOne({ _id: reference });
+            const _activity = await Course.findOne({ _id: reference });
             newReference = _activity.name + ' (ACTIVITY)';
         } else {
             return console.log({ message: 'Invalid key' });
@@ -337,7 +337,7 @@ exports.coursesUpdateActivity = (req, res, next) => {
     const { courseId, activityId } = req.params;
     const updateFields = req.body;
     const userId = req.userData.userId;
-    performLog(userId, 'updated', activityId, 'activity', res)
+    performLog(userId, 'updated', courseId, 'activity', res)
     performActivityUpdate(courseId, activityId, updateFields, res);
     return res.status(200).json({ message: 'Activity updated successfully' })
 };
@@ -351,7 +351,7 @@ exports.activityUpdateSubmission = async (req, res, next) => {
         activityId,
         submissionId,
     })
-    performLog(userId, 'submitted', activityId, 'activity', res)
+    performLog(userId, 'submitted', courseId, 'activity', res)
     performSubmissionUpdate(courseId, activityId, submissionId, updateFields, res);
     return res.status(200).json({ message: 'Submission updated successfully' })
 };

@@ -18,8 +18,8 @@ router.put('/update/:id', CoursesController.coursesUpdateCourse);
 
 router.put('/activity/add/:id', checkAuth, upload.single('file'), CoursesController.coursesAddActivity);
 
-router.put('/activity/update/:courseId/:activityId', checkAuth, CoursesController.coursesUpdateActivity);
-
 router.put('/submission/update/:courseId/:activityId/:submissionId', checkAuth, CoursesController.activityUpdateSubmission);
+
+router.put('/activity/update/:courseId/:activityId', checkAuth, CoursesController.coursesUpdateActivity);
 
 module.exports = router;

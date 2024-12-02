@@ -10,7 +10,7 @@ const userSchema = mongoose.Schema({
     middleName: { type: String },
     gender: { type: String, required: true, },
     contactNumber: { type: String, required: true },
-    birthDate: { type: Date, required: true },
+    birthDate: { type: Date },
     school: { type: String, required: true, default: "none" },
 
     //address

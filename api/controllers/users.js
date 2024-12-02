@@ -34,7 +34,7 @@ const performLog = async (userId, action, reference, key, res) => {
     try {
         const user = await User.findOne({ _id: userId });
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return console.log({ message: 'User not found' });
         }
 
         var newReference = null;
@@ -51,7 +51,7 @@ const performLog = async (userId, action, reference, key, res) => {
             const _activity = await Course.activities.findOne({ _id: reference });
             newReference = _activity.name + ' (ACTIVITY)';
         } else {
-            return res.status(400).json({ message: 'Invalid key' });
+            return console.log({ message: 'Invalid key' });
         }
 
         const name = user.firstName + ' ' + user.lastName;
@@ -692,7 +692,8 @@ exports.usersCreateAttendanceLogout = (req, res, next) => {
 exports.usersUpdateUser = async (req, res, next) => {
     const userId = req.params.userId;
     const updateFields = req.body;
-    await performLog(userId, "updated", updateFields, res)
+    console.log(updateFields)
+    // await performLog(userId, "updated", updateFields, "user", res)
 
     if (updateFields.password) {
         const bcrypt = require('bcrypt');

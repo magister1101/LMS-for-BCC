@@ -16,6 +16,7 @@ const courseSchema = mongoose.Schema({
             studentId: { type: String },
             studentName: { type: String },
             file: { type: String },
+            status: { type: String, default: 'pending' }, //pending, approved, rejected
             isCompleted: { type: Boolean },
             isArchived: { type: Boolean },
         }],

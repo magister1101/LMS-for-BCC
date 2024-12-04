@@ -10,7 +10,7 @@ const userSchema = mongoose.Schema({
     middleName: { type: String },
     gender: { type: String, required: true, },
     contactNumber: { type: String, required: true },
-    birthDate: { type: Date },
+    birthDate: { type: Date, default: "2000-01-01T00:00:00Z" },
     school: { type: String, required: true, default: "none" },
 
     //address
@@ -38,13 +38,13 @@ const userSchema = mongoose.Schema({
     guardianBlockAndLot: { type: String, required: true, default: "none" },
 
     //image
-    qrCode: { type: String },
     userImage: { type: String, required: true },
     parentId: { type: String, required: true, default: "none" },
     schoolId: { type: String, required: true, default: "none" },
 
     //title
     title: { type: String, required: true, default: "member" }, //member, instructor, admin
+    attendanceCounter: { type: Number, required: true, default: 0 },
     rank: { type: Number, required: true, default: 0 },
 
     //archive checker

@@ -14,6 +14,8 @@ router.get('/logs', UsersController.getLogs);
 
 router.get('/attendance/getAttendance', UsersController.usersGetAttendance)
 
+router.get('/attendance/getAttendanceToday', UsersController.usersAttendanceToday) //?date=2024-11-01
+
 router.get('/attendance/getByRange', UsersController.usersGetAttendanceByRange) //?startDate=2024-11-01&endDate=2024-11-30
 
 router.get('/myProfile', checkAuth, UsersController.usersMyProfile);
@@ -32,7 +34,8 @@ router.post('/attendance/Login', UsersController.usersCreateAttendanceLogin);
 
 router.put('/attendance/Logout', UsersController.usersCreateAttendanceLogout);
 
-router.put('/update/:userId', UsersController.usersUpdateUser);
+router.put('/update/:userId', checkAuth, UsersController.usersUpdateUser);
+
 
 
 module.exports = router;

@@ -5,6 +5,7 @@ const path = require('path');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const moment = require('moment');
+const { upload } = require('../../configs/uploadConfigActivity');
 
 const SignupCode = require('../models/signupCode');
 const User = require('../models/user');
@@ -161,77 +162,6 @@ exports.usersGetUser = async (req, res, next) => {
     }
 };
 
-// exports.getLogs = async (req, res, next) => {
-//     try {
-//         const { query, filter } = req.query;
-
-//         const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-//         let searchCriteria = {};
-//         const queryConditions = [];
-
-//         if (query) {
-//             const escapedQuery = escapeRegex(query);
-//             const orConditions = [];
-
-//             if (mongoose.Types.ObjectId.isValid(query)) {
-//                 orConditions.push({ _id: query });
-//             }
-//             // Search by name or reference
-//             orConditions.push(
-//                 { name: { $regex: escapedQuery, $options: 'i' } },
-//                 { reference: { $regex: escapedQuery, $options: 'i' } }
-//             );
-//             queryConditions.push({ $or: orConditions });
-//         }
-
-//         if (filter) {
-//             const escapedFilter = escapeRegex(filter);
-//             queryConditions.push({
-//                 $or: [{ action: { $regex: escapedFilter, $options: 'i' } }],
-//             });
-//         }
-
-//         if (queryConditions.length > 0) {
-//             searchCriteria = { $and: queryConditions };
-//         }
-
-//         const logs = await Log.find(searchCriteria);
-
-//         const activityStrings = logs.map((log) => {
-//             const { name, action, reference, timestamp } = log;
-
-//             let referenceString = reference;
-//             if (typeof reference === 'object') {
-//                 referenceString = JSON.stringify(reference)
-//                     .replace(/\\\"/g, '')      // Remove escaped double quotes
-//                     .replace(/{|}/g, '')       // Remove curly braces
-//                     .replace(/\"/g, '')        // Remove remaining double quotes
-//                     .trim();                   // Trim any extra spaces
-//             }
-
-//             // Format the timestamp to MM/DD/YYYY
-//             const date = new Date(timestamp);
-//             const month = date.getMonth() + 1; // getMonth() returns a zero-indexed value, so we add 1
-//             const day = date.getDate();
-//             const year = date.getFullYear();
-
-//             const formattedDate = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
-
-//             // Return the formatted string
-//             return { entry: `${name} ${action} ${referenceString} on ${formattedDate}` };
-//         });
-
-//         return res.status(200).json({ logs: activityStrings });
-//     } catch (err) {
-//         console.error('Error retrieving log:', err);
-//         return res.status(500).json({
-//             message: 'Error in retrieving log',
-//             error: err.message,
-//         });
-//     }
-// };
-
 exports.getLogs = async (req, res, next) => {
     try {
         const { query, filter } = req.query;
@@ -338,15 +268,12 @@ exports.usersGetAttendance = async (req, res, next) => {
 
 exports.usersGetAttendanceByRange = async (req, res, next) => {
     try {
-        // Extract the `startDate` and `endDate` from query parameters
-        const { startDate, endDate } = req.query;
+        const { startDate, endDate, userId } = req.query;
 
-        // Validate date inputs
         if (!startDate || !endDate) {
             return res.status(400).json({ message: 'Please provide both startDate and endDate in the query.' });
         }
 
-        // Convert the date strings to JavaScript Date objects
         const start = new Date(startDate);
         const end = new Date(endDate);
 
@@ -355,13 +282,21 @@ exports.usersGetAttendanceByRange = async (req, res, next) => {
             return res.status(400).json({ message: 'Invalid date format. Use YYYY-MM-DD.' });
         }
 
-        // Query the database for attendance records within the range
-        const attendances = await Attendance.find({
+        // Build the query object
+        const query = {
             attendanceDateStartTime: {
                 $gte: start,
                 $lte: end,
             },
-        }).lean(); // Convert MongoDB BSON objects to plain JS objects
+        };
+
+        // Add userId filter if provided
+        if (userId) {
+            query.user_id = userId;
+        }
+
+        // Query the database for attendance records within the range and optionally filtered by userId
+        const attendances = await Attendance.find(query).lean(); // Convert MongoDB BSON objects to plain JS objects
 
         // Transform the BSON format to a JSON-compatible format
         const formattedAttendances = attendances.map((record) => ({
@@ -369,7 +304,6 @@ exports.usersGetAttendanceByRange = async (req, res, next) => {
             user_id: record.user_id,
             attendanceDateStartTime: record.attendanceDateStartTime?.toISOString(), // Convert Date to ISO string
             attendanceDateEndTime: record.attendanceDateEndTime?.toISOString(), // Handle optional Date
-            ...record, // Include other fields in the document
         }));
 
         // Return the formatted results
@@ -377,6 +311,25 @@ exports.usersGetAttendanceByRange = async (req, res, next) => {
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+exports.usersAttendanceToday = async (req, res, next) => {
+    try {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0); // Set to start of the day
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999); // Set to end of the day
+
+        // Query to count attendance records within today's range
+        const attendanceCount = await Attendance.countDocuments({
+            attendanceDateStartTime: { $gte: startOfToday, $lte: endOfToday }
+        });
+
+        return res.status(200).json(attendanceCount);
+    } catch (error) {
+        console.error('Error fetching attendance count:', error);
+        throw error;
     }
 };
 
@@ -506,6 +459,7 @@ exports.userSignup = async (req, res, next) => {
             contactNumber: req.body.contactNumber,
             birthDate: new Date(req.body.birthDate),
             school: req.body.school,
+            title: req.body.title,
             // Address
             country: req.body.country,
             zipCode: req.body.zipCode,
@@ -548,7 +502,6 @@ exports.userSignup = async (req, res, next) => {
         });
     }
 };
-
 
 exports.usersLogin = (req, res, next) => {
     User.find({ username: req.body.username })
@@ -620,10 +573,23 @@ exports.usersCreateAttendanceLogin = (req, res, next) => {
                 attendance
                     .save()
                     .then(result => {
-                        return res.status(201).json({
-                            message: 'Attendance recorded successfully',
-                            attendance: result,
-                        })
+                        // Increment AttendanceCounter after attendance is recorded
+                        return User.findByIdAndUpdate(
+                            userId,
+                            { $inc: { AttendanceCounter: 1 } }, // Increment AttendanceCounter by 1
+                            { new: true } // Return the updated document
+                        ).then(updatedUser => {
+                            if (!updatedUser) {
+                                return res.status(404).json({
+                                    message: 'User not found'
+                                });
+                            }
+                            return res.status(201).json({
+                                message: 'Attendance recorded successfully and counter updated',
+                                attendance: result,
+                                user: updatedUser,
+                            });
+                        });
                     })
             }
         })
@@ -692,7 +658,15 @@ exports.usersCreateAttendanceLogout = (req, res, next) => {
 exports.usersUpdateUser = async (req, res, next) => {
     const userId = req.params.userId;
     const updateFields = req.body;
+    const userImage = req.files;
+
+    if (userImage) {
+
+        updateFields.userImage = userImage.path;
+    }
+
     console.log(updateFields)
+
     // await performLog(userId, "updated", updateFields, "user", res)
 
     if (updateFields.password) {
